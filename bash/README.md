@@ -38,6 +38,21 @@ guide on:
 The above provides good material to get started and also for reference later
 on as you write better and better Bash scripts.
 
+## Appropriateness
+
+Here I will shed light on when I think it is appropriate to use Bash for
+a task instead of the plethora of other shell, scripting, or compiled
+langauges available to us every day.
+
+Appropriate uses for a Bash script are:
+
+* glueing together various shell commands and handling errors appropriately
+* anything that should not require any special runtimes, interpreters or
+  langauges installed on the target run hosts.
+* any script that does not require using a data structure more complex than
+  an array. (Yes, Bash 4 has support for associative arrays now, but most
+  of our target systems are still Bash 3.)
+
 ## Conventions
 
 TODO
