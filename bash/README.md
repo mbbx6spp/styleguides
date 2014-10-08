@@ -30,4 +30,14 @@ Thank you! (: (Note: the left handed smiley, just for you.)
 
 Here is a list of sources for Bash scripting that I am basing my style
 guide on:
+
+* [The Bash Guide](http://guide.bash.academy/)
+* [Bash FAQ](http://mywiki.wooledge.org/BashFAQ/)
+* [Bash Pitfalls](http://mywiki.wooledge.org/BashPitfalls)
+
+The above provides good material to get started and also for reference later
+on as you write better and better Bash scripts.
+
+## Conventions
+
 TODO
