@@ -29,6 +29,10 @@ conventions that should be adhered to.
 
 These should be enforced during review.
 
+## Philosophy
+
+TODO Ben needs to fork and submit a pull request for this :)
+
 ## License
 
 This is licensed under the 3-clause BSD license. See LICENSE file for
