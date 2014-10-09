@@ -46,33 +46,99 @@ langauges available to us every day.
 
 Appropriate uses for a Bash script are:
 
-* glueing together various shell commands and handling errors appropriately
-* anything that should not require any special runtimes, interpreters or
+* Gluing together various shell commands and handling errors appropriately
+* Anything that should not require any special runtimes, interpreters or
   langauges installed on the target run hosts.
-* any script that does not require using a data structure more complex than
+* Any script that does not require using a data structure more complex than
   an array. (Yes, Bash 4 has support for associative arrays now, but most
   of our target systems are still Bash 3.)
+* Anything you would have done manually on the command line twice should be
+  put in a script in some repo. Otherwise please get back to administering
+  a Solaris box at your local university.
 
 ## Conventions
+
+### Usage
+* All scripts must take a -h argument and return the usage. The usage should
+  be in BNF or EBNF:
+  http://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_Form
+* The usage must include every option and argument the script will accept.
+* The script must include usable examples below the EBNF. This is really
+  helpful when testing code reviews too.
+* The script should use lower case for most arguments, unless the option
+  'negates' in which case it should be upper case.
+* Adding a `-f` option to bypass error checking can really help you in a bind.
+* The script should never take any irreversible actions without prompting or
+  having `-f` passed.
+* Adding a `-d` that does `set -x` is also awesome.
+
+### Variables
+* All variables in functions must be locally scoped.
+* All variables anywhere should be declared.
+* Globally exported variables must be in all uppercase.
+* Globally exported variables should be prefixed with an indicator that it
+  was created by in house code. i.e. for company Widgets, `W_VAR_NAME` would
+  be most excellent
+* Variable names should use _ as a word separator
+* Locally scoped variables should be in lower case
+* Variable names should be meaningful, short names are nobody's friend
+
+### Functions
+* All locally created functions should be prefixed with an indicator that
+  it was created by in house code, similar to variable naming
+* Function names should be in lower case and use _ as a word separator
 
 ### Errors
 
 * All error messages should go to `STDERR`.
+* All scripts should `set -e` to exit on error.
+* All scripts should `set -u` to help prevent unbound variables.
+* Doing trap catching to extend debugging output in the event of an error
+  will in fact get you laid. This example shows how you would do that
+  in a sourced library script:
+
+      function j_its_a_trap() {
+        local script_name="$0"
+        local trap_name="$1"
+        local last_line="$2"
+        local last_error="${4:-1}"
+        if [ -z "${J_DISABLE_ERR_TRAP:-}" ]; then
+          echo "J-ERROR: ${trap_name} ${script_name}: line ${last_line}: return code: ${last_error}" >&2
+          echo "J-ERROR: [line: $( caller )] $*" >&2
+        fi
+      }
+      
+      function j_enable_traps() {
+        local force="${1:-}"
+        unset J_DISABLE_ERR_TRAP
+        if ! tty >/dev/null 2>&1 || [ -n "$force" ]; then
+          trap 'j_its_a_trap "SIGERR" ${LINENO} ${$?}' ERR
+          trap 'j_its_a_trap "SIGINT" ${LINENO} ${$?}' INT
+          trap 'j_its_a_trap "SIGHUP" ${LINENO} ${$?}' HUP
+          trap 'j_its_a_trap "SIGTERM "${LINENO} ${$?}' TERM
+          trap 'j_its_a_trap "SIGKILL" ${LINENO} ${$?}' KILL
+          trap 'j_its_a_trap "SIGQUIT" ${LINENO} ${$?}' QUIT
+        else
+          trap 'j_kill_waiting "SIGINT" ${LINENO} ${$?}' INT
+        fi
+      }
+      
+      j_enable_traps
 * All scripts encountering an unhandlable error *must* report a non-zero exit
   code. The exit code should conform to common conventions outlined below.
 
-| Exit Code | Reason |
-|-----------|--------|
-| 0         | Ok, successful run of script. |
-| 1         | Catchall for general errors.  |
-| 2         | Missing command, keyword, or permission problem. |
-| 126       | Command invoked cannot execute. |
-| 127       | Command not found. |
-| 128       | Invalid argument to exit. |
-| 128+N     | Fatal error signal received where N is signal sent process.|
+      | Exit Code | Reason |
+      |-----------|--------|
+      | 0         | Ok, successful run of script. |
+      | 1         | Catchall for general errors.  |
+      | 2         | Missing command, keyword, or permission problem. |
+      | 126       | Command invoked cannot execute. |
+      | 127       | Command not found. |
+      | 128       | Invalid argument to exit. |
+      | 128+N     | Fatal error signal received where N is signal sent process.|
 
-For example, 130 corresponds to a Ctl+C-ed process since signal of 2 is sent
-to the process which typically terminates it.
+  For example, 130 corresponds to a Ctl+C-ed process since signal of 2 is sent
+  to the process which typically terminates it.
 
 ### Security
 
@@ -84,15 +150,16 @@ to the process which typically terminates it.
   create a new file with the specified template. It makes sure that no file
   or symbolic link already exists at that path. You would use this like so:
   `declare tmp_filename="$(mktemp /tmp/appname.secret.XXXX)"`
-* You *should* also create a temporary directory using `mktemp` that the
-  temporary file will reside in and change the permissions of the temporary
-  directory before creating the file AND still use `umask` before creating
-  the file containing sensitive data. You can do this using the `-d` option
-  to `mktemp` to create a temporary directory.
+* The `mktemp` prefix should indicate which script created the file
+* There should be a user specific TMP directory defined, most likely as
+  `$W_TMP`. All mktemp operations should happen in here instead of just `/tmp`
+* If the script creates a lot of temporary files they should be placed in
+  an appropriately secured directory specific to the application. It should
+  use something similar to `my_tmp_dir=$(mktemp $W_TMP/appname.XXXXX)` to do
+  this.
 * You *must* never use `eval` or I will slap you with a wet tuna until you
   beg for forgiveness.
 * SUID and SGID *must* never be used on shell scripts.
-
 
 ### Naming
 
@@ -101,17 +168,21 @@ to the process which typically terminates it.
 * Executables should have no extension (preferred) or a .sh extension.
 * Libraries *must* have a .sh, .env, .functions extension and *should* not be
   executable.
+* Script names should be easily readable and convey useful information about
+  the functionality of the script.
+  i.e. j-git-migrate-branches, j-config-deploy
 
 ### Structure
 
 #### Indentation
 
 * Use 2 soft spaces. No tabs.
+* All continued lines should be indented further than the line it extends
 
 #### Line Length
 
-* You should keep lines of Bash scripts 80 characters or less whenever
-  possible.
+* All lines should be 80 characters or less, use `\` to extend lines (and
+  indent!)
 
 #### Comments
 
