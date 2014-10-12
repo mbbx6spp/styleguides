@@ -44,7 +44,8 @@ that we shouldn't waste. The aspect of building and deploying services
 requires an immense amount of technical knowledge and design fudamentals.
 How do we learn these? How does an entire team get on the same page? How
 do technical leads respectfully and thoughtfully instill a vision and
-methodology into others in their team? How do you actually poach an egg?
+methodology into others in their team? How do you [actually poach an egg?] [1]
+
 To successfully achieve this we must take into account several aspects of
 systems management, software design and human nature. To see the product
 of competent engineers successfully delivered to customers through awesome
@@ -65,6 +66,9 @@ engineer who thinks they are at the top of their game is ignorant of their
 surroundings and should not be trusted. Everyone has room to improve, and
 respectful, stylistically correct, code reviews are an amazing way to do
 exactly that.
+
+[1]: https://www.youtube.com/watch?v=UMiCy8EH1goUsing "Poaching eggs"
+
 
 ## License
 
