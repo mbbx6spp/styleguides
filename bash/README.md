@@ -107,7 +107,7 @@ Appropriate uses for a Bash script are:
           echo "J-ERROR: [line: $( caller )] $*" >&2
         fi
       }
-      
+
       function j_enable_traps() {
         local force="${1:-}"
         unset J_DISABLE_ERR_TRAP
@@ -122,7 +122,7 @@ Appropriate uses for a Bash script are:
           trap 'j_kill_waiting "SIGINT" ${LINENO} ${$?}' INT
         fi
       }
-      
+
       j_enable_traps
 * All scripts encountering an unhandlable error *must* report a non-zero exit
   code. The exit code should conform to common conventions outlined below.
@@ -204,7 +204,14 @@ Appropriate uses for a Bash script are:
 * You *must* put `; do` and `; then` on the same line as the `while`, `for`
   or `if`.
 
+### Tools
 
-TODO
+Agree on a linting/checkstyle tool to use for your projects that incorporate
+Bash scripts.
 
+I strongly suggest [`shellcheck`] [1]. You can install this after you have
+installed Haskell. You can thank me later, but for now, run your install
+command for Haskell (either GHC plus cabal and happy, etc. or Haskell Platform)
+before you go out to lunch. :)
 
+[1]: http://www.shellcheck.net/about.html "About ShellCheck"
