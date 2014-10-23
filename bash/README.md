@@ -217,4 +217,8 @@ installed Haskell. You can thank me later, but for now, run your install
 command for Haskell (either GHC plus cabal and happy, etc. or Haskell Platform)
 before you go out to lunch. :)
 
+Even though typically only useful in your Bash "libraries" of functions you
+might also want to consider if using [`shunit2`] [2] is appropriate or not.
+
 [1]: http://www.shellcheck.net/about.html "About ShellCheck"
+[2]: https://code.google.com/p/shunit2/ "shunit2 Bash testing"
