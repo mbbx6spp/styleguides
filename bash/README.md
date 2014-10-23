@@ -232,6 +232,8 @@ Appropriate uses for a Bash script are:
 * The script should never take any irreversible actions without prompting or
   having `-f` passed.
 * Adding a `-d` that does `set -x` is also awesome.
+* If you are using `read` you probably did something wrong. The user should
+  be able to supply all input on the command line.
 
 ### Variables
 * All variables in functions must be locally scoped.
@@ -322,6 +324,41 @@ Appropriate uses for a Bash script are:
   beg for forgiveness.
 * SUID and SGID *must* never be used on shell scripts.
 
+### Output
+
+* Colors should be used rarely if ever. Not everyone's terminal supports them
+  and they can make the output look horrible for people using screen or other
+  non-vt220 termcaps.
+* Superfluous headers and whitespace should be avoided.
+* Non-error output must always go to `STDOUT`
+* Errors must always be sent to `STDERR`
+* Output should be easy to parse using grep, sort, etc
+* Output should not require extra context to understand, variable names should
+  be shown so the user doesn't need a template or legend to read it.
+
+      echo "=========================================================="
+      echo "Push Stats"
+      echo "Started $start_date"
+      echo "Finished $end_date"
+      echo "=========================================================="
+      echo "Version: $version"
+      echo "Repository: $repository"
+      echo "Started: $start_date"
+      echo "Ended: $end_date"
+      echo "Phases: $phase_count"
+      echo "Services: $service_count"
+      echo "j-updates: $ssh_count"
+      echo "Elapsed $total_time seconds"
+      echo "=========================================================="
+
+* Machine parsable output example of above sent to the logger for later stats
+  gathering or possibly event alerting.
+
+      echo "deploy: start_date=${start_date}|end_date=${end_date}|\
+      version=${version}|repository=${repository}|phase_count=${phase_count}|\
+      service_count=${service_count}|ssh_count=${ssh_count}|\
+      total_time=${total_time}" | logger
+        
 ### Naming
 
 #### Files
