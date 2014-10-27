@@ -173,6 +173,55 @@ fi
 
 ```
 
+### Defaulting values of variables
+
+Sometimes you need to set defaults to variables when you're initializing your
+script. For example, you might want the user to be able to override a
+default using an environment variable or script argument they set when
+running a script.
+
+You might do something like this:
+
+```bash
+if [ $# -lt 1 ]; then
+  declare -r server_name="default.example.com"
+else
+  declare -r server_name="${1}"
+fi
+```
+
+This is an awful lot of boilerplate for something so simple. Good news!
+Bash offers you two ways to do *defaulting* of variables.
+
+```bash
+declare -r server_name="${1:-https://default.example.com}"
+```
+
+If `$1` is empty string, i.e. someone purposely did: `mycommand ""`
+then it would still use the default using the `:-` defaulting method.
+
+Alternatively you might want this instead (in a different situation):
+
+```bash
+unset MY_ENV_PREFIX
+declare prefix="${MY_ENV_PREFIX->>>}"
+echo "${prefix}" # shows >>>
+
+MY_ENV_PREFIX=???
+declare prefix="${MY_ENV_PREFIX->>>}"
+echo "${prefix}" # shows ???
+
+MY_ENV_PREFIX=""
+declare prefix="${MY_ENV_PREFIX->>>}"
+echo "${prefix}" # shows  (empty string)
+```
+
+Which you use will depend on which case you prefer to handle.
+
+I personally usually use the `:-` method with only a couple of exceptional
+cases where I use the `-` default. I wouldn't make a rule on this other
+than the usage has to fit the actual requirements.
+
 ### Case statements don't have to be evil
 
 Here is an example of using a `case` statement in Bash:
@@ -250,6 +299,40 @@ Appropriate uses for a Bash script are:
 * All locally created functions should be prefixed with an indicator that
   it was created by in house code, similar to variable naming
 * Function names should be in lower case and use _ as a word separator
+* A function shouldn't depend on `set -e` being set from outside its own
+  context. If a function *fails* it should `return` a non-zero positive
+  integer from the function that corresponds to the exit code it would like
+  returned in the larger context.
+
+When testing conditions in your function you should `return` the appropriate
+non-zero integer when necessary.
+```bash
+function a() {
+  echo "starting a()"
+  false
+  echo "ending a()"
+}
+
+function b() {
+  echo "b()"
+}
+
+set +e
+a; b;
+# The above should output the following:
+# starting a()
+# ending a()
+# b()
+
+set -e
+a; b;
+# The above should output the following and return with non-zero exit:
+# starting a()
+```
+
+Choose the most appropriate way of handling your function. Although in my
+Bash script I always use `set -ue` after all the basic definitions and checks
+are run.
 
 ### Errors
 
@@ -358,7 +441,7 @@ Appropriate uses for a Bash script are:
       version=${version}|repository=${repository}|phase_count=${phase_count}|\
       service_count=${service_count}|ssh_count=${ssh_count}|\
       total_time=${total_time}" | logger
-        
+
 ### Naming
 
 #### Files
