@@ -103,12 +103,12 @@ function bla() {
     return 1
   fi
 
-  if [ ${age} -lt 18 ]; then
+  if [ "${age}" -lt 18 ]; then
     >&2 echo "You are under age, sorry"
     return 1
   fi
 
-  if [ ${age} -gt 60 ]; then
+  if [ "${age}" -gt 60 ]; then
     echo "Good day ${name}"
   else
     echo "Yo, what up ${name}?"
@@ -157,6 +157,8 @@ Use the `[]` version of `test` (see `man 1 test`). Some gotchas are:
 * Numeric comparisons are done using: `-lt`, `-gt`, `-eq`, `-ne`, etc.
 * When comparing strings put quotes around variables :)
 * Remember to `man 1 test` for more details
+* Use `[[]]` when you need to do glob matching
+
 
 Here are some examples:
 
@@ -166,10 +168,13 @@ if [ "${USER}" = "${expected_user}" ]; then
   # ...
 fi
 
-if [ ${default_port} -lt 1024 ]; then
+if [ "${default_port}" -lt 1024 ]; then
   # do something like `sudo` if necessary for priviledged ports?
 fi
 
+if [[ "${value}" =~ ".*$name.*" ]]; then
+  echo 'Yo dawg, we heard you like globs'
+fi
 
 ```
 
@@ -270,8 +275,7 @@ Appropriate uses for a Bash script are:
 
 ### Usage
 * All scripts must take a -h argument and return the usage. The usage should
-  be in BNF or EBNF:
-  http://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_Form
+  be in [BNF or EBNF](http://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_Form)
 * The usage must include every option and argument the script will accept.
 * The script must include usable examples below the EBNF. This is really
   helpful when testing code reviews too.
@@ -282,7 +286,8 @@ Appropriate uses for a Bash script are:
   having `-f` passed.
 * Adding a `-d` that does `set -x` is also awesome.
 * If you are using `read` you probably did something wrong. The user should
-  be able to supply all input on the command line.
+  be able to supply all input on the command line. The one exception to this
+  is reading data in from other commands.
 
 ### Variables
 * All variables in functions must be locally scoped.
@@ -291,14 +296,69 @@ Appropriate uses for a Bash script are:
 * Globally exported variables should be prefixed with an indicator that it
   was created by in house code. i.e. for company Widgets, `W_VAR_NAME` would
   be most excellent
-* Variable names should use _ as a word separator
+* Variable names should use `_` as a word separator
 * Locally scoped variables should be in lower case
 * Variable names should be meaningful, short names are nobody's friend
+* Variables should usually be wrapped with `{}` when doing expansion, i.e.
+```bash
+if [ "${J_YO_DAWG}" ]
+```
+* Quote early and often! Use ' when you can, " when you can`t. Random
+  spaces appearing in variables can cause weird problems!
+* String manipulation can be done inside bash. You don't always have to use
+  sed. Some examples, taken from [Robert Muth's Better Bash Scripting](http://robertmuth.blogspot.com/2012/08/better-bash-scripting-in-15-minutes.html)
+```bash
+Basics
+
+f="path1/path2/file.ext"
+len="${#f}" # = 20 (string length)
+
+# slicing: ${<var>:<start>} or ${<var>:<start>:<length>}
+slice1="${f:6}" # = "path2/file.ext"
+slice2="${f:6:5}" # = "path2"
+slice3="${f: -8}" # = "file.ext"(Note: space before "-")
+pos=6
+len=5
+slice4="${f:${pos}:${len}}" # = "path2"
+
+Substitution (with globbing)
+
+f="path1/path2/file.ext"
+
+single_subst="${f/path?/x}"   # = "x/path2/file.ext"
+global_subst="${f//path?/x}"  # = "x/x/file.ext"
+
+# string splitting
+readonly DIR_SEP="/"
+
+array=(${f//${DIR_SEP}/ })
+second_dir="${array[1]}"     # = path2
+
+Deletion at beginning/end (with globbing)
+
+f="path1/path2/file.ext"
+
+# deletion at string beginning
+extension="${f#*.}"  # = "ext"
+
+# greedy deletion at string beginning
+filename="${f##*/}"  # = "file.ext"
+# deletion at string end
+dirname="${f%/*}"    # = "path1/path2"
+
+# greedy deletion at end
+root="${f%%/*}"      # = "path1"
+```
+
 
 ### Functions
 * All locally created functions should be prefixed with an indicator that
   it was created by in house code, similar to variable naming
 * Function names should be in lower case and use _ as a word separator
+* Putting most of your execution logic into functions and then just calling
+  them at the end of the script can greatly improve readability for others.
+  Remember, [always code as if the guy who ends up maintaining your code will
+  be a violent psychopath who knows where you live.](https://groups.google.com/forum/#!msg/comp.lang.c++/rYCO5yn4lXw/oITtSkZOtoUJ)
 * A function shouldn't depend on `set -e` being set from outside its own
   context. If a function *fails* it should `return` a non-zero positive
   integer from the function that corresponds to the exit code it would like
@@ -452,6 +512,9 @@ are run.
 * Script names should be easily readable and convey useful information about
   the functionality of the script.
   i.e. j-git-migrate-branches, j-config-deploy
+* Temporary files should be removed on successful completion of a function or
+  exit of the script. Using trap to do this can make it much easier if you've
+  put all your temporary files in a single directory.
 
 ### Structure
 
