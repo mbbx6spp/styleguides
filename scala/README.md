@@ -58,6 +58,45 @@ of choice based on their requirements.
   * WartRemover ([SBT plugin] [7]) - provides additional linting checks to first
     option for the engineer concerned about type safety.
 
+
+## Project Structure
+
+Before considering package, file, dependency, and namespacing structure of
+functional Scala code, I'd like to recommend the following semantic structure:
+
+### Typeclasses
+
+Forget OO classes. Typeclasses are basically decoupled interfaces. You can
+define an interface and at any time at or after the moment of declaring a
+specific type, you can attach an implementation for an in scope interface for
+that type.
+
+If you are already familiar with the notion of typeclasses then read the
+overview paragraphs of the next few subsubsections (Types, Instances,
+Functions, Namespaces) and continue on.
+
+Here we will look at the concept of a typeclass.
+
+
+### Types
+
+
+### Instances
+
+
+### Functions
+
+
+### Namespaces
+
+
+
+
+For library, utility, or toolkit Scala projects here is a package (and file)
+structure I highly recommend for functional Scala projects:
+
+
+
 TODO: Custom file and structure style guide for more functional Scala code
 bases.
 
