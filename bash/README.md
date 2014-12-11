@@ -289,6 +289,21 @@ Appropriate uses for a Bash script are:
   be able to supply all input on the command line. The one exception to this
   is reading data in from other commands.
 
+### Running
+* All scripts that could be sourced or be executed should separate sourcing
+  and execution paths. See below
+
+```bash
+if [ "${BASH_SOURCE[0]}" != "$0" ]; then
+  export -f func1
+  # and any other functions and/or variables to export
+else
+  set -eu
+  main "${@}"
+  exit 0
+fi
+```
+
 ### Variables
 * All variables in functions must be locally scoped.
 * All variables anywhere should be declared.
