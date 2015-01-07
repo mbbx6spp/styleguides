@@ -523,13 +523,57 @@ Now let's look at an example of an `unapply` extractor method:
 
 [source,scala]
 ----
-// TODO
+import java.util.Calendar
+
+object UpCased {
+  def unapply(s: String): Boolean = (s.toUpperCase == s)
+}
+
+object DownCased {
+  def unapply(s: String): Boolean = (s.toLowerCase == s)
+}
+
+object InternetMinor {
+  def unapply(i: Int): Boolean = (i < 13)
+}
+
+case class User(login: String, fullName: String, age: Int)
+
+// Using these extractors
+def reportUserCreationSuccess(u: User) =
+  user match {
+    case User(_, _, age @ InternetMinor()) =>
+      println("You are too young to create an account")
+    case u =>
+      println("Hooray! You can create an account")
+  }
+
+// reportUserCreationSuccess(User("mbbx6spp", "Susan Potter", 27)) // what is a white lie between friends?
+// reportUserCreationSuccess(User("elliphant", "Ellinor O", 29))
+// reportUserCreationSuccess(User("pandabear", "Panda", 11))
+----
+
+=== Sealed
+
+This keyword just means that whatever you seal (e.g. trait, abstract class, etc.)
+cannot be extended outside of the file it was defined within.
+
+This makes using the Java conventions of one interface or class per source
+file not something that can be done easily if you want to build a closed
+type with extensions to the kind of entity you are creating sealed.
+
+[source,scala]
+----
+// inside operators.scala
+sealed trait Operator
+case class Addition(lhs: Int, rhs: Int) extends Operator
+
+// inside anotherfile.scala but same package
+case class Multiplication(x: Int, y: Int) extends Operator // results in compile error
 ----
 
 .TODO: brief introduction to the following:
 * using objects for packaging
-* sealed
-* apply/unapply
 * implicit parameters
 * type constructors
 * type aliases
