@@ -1,0 +1,19 @@
+=== Sealed
+
+This keyword just means that whatever you seal (e.g. trait, abstract class, etc.)
+cannot be extended outside of the file it was defined within.
+
+This makes using the Java conventions of one interface or class per source
+file not something that can be done easily if you want to build a closed
+type with extensions to the kind of entity you are creating sealed.
+
+[source,scala]
+----
+// inside operators.scala
+sealed trait Operator
+case class Addition(lhs: Int, rhs: Int) extends Operator
+
+// inside anotherfile.scala but same package
+case class Multiplication(x: Int, y: Int) extends Operator // results in compile error
+----
+

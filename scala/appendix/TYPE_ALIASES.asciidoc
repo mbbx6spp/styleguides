@@ -1,0 +1,19 @@
+=== Type Aliases
+
+When you have a type that needs a better name than it's signature, you can (and
+should use it's type alias).
+
+[source,scala]
+----
+// This stands for psuedo random number generator.
+// This will name a function signature of `() => Int` to PRNG.
+// Only do this if the consumer of your code will find this more intuitive
+// than the signature `() => Int`.
+type PRNG = () => Int
+
+// Perhaps a more compelling case for a type alias might be:
+type SocketGenerator = java.net.SocketAddress => java.net.Socket
+
+// You might use this like so:
+def createSocket: SocketGenerator = (new Socket()).connect(_)
+----

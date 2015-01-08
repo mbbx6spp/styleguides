@@ -1,684 +1,47 @@
 == Scala: An Opinionated Guide
 
-This Guide is split up into two parts:
+This guide to learning Scala is split up into three parts:
 
-* Important Bits
+* Quickstart
 * Parts To Avoid (And Their Alternatives)
+* Appendix
 
-I do not cover all features of Scala. I think it would be unnecessary to
-do so with the aim of teaching you enough Scala to make you dangerous.
+I don't cover all features of the Scala language by design.
 
-The intended audience is one of the following:
+The intended audience of this guide is one of the following:
 
-* An operations engineer who has written a fair bit of Ruby, Python, or Perl (gah)
-* Someone that has done some OO development before
-* A software engineer new to Scala and wants to know only the 'good parts' to
+* An operations engineer who has written a some Ruby, Python, or Perl (gah)
+* A programmer new to Scala and wants to know only the 'good parts' to
   get started quickly and make up their own mind later what works for them.
-* Someone who is somewhat familiar with Scala on a basic level but is just
-  used to writing Scala as if it is a less verbose Java. This audience should
-  be prepared to unlearn a few things about Scala. Good luck. :)
+* Someone who is familiar with Scala on a basic level but is used to writing
+  Scala as if it is a less verbose Java. *This audience should be prepared to
+  unlearn a few things about Scala. Good luck. :)*
 
 I do have strong opinions on Scala style and form. This will become obvious to
-you, especially in the second part of this which will be more design based and
-philosophical.
+you, especially in the second part of this which will be design and/or
+philosophically based.
 
-This tutorial/guide is being written with the intention of licensing the
-material under the http://creativecommons.org/licenses/by-nc-sa/4.0/[Creative
+This tutorial/guide is licensed under the
+http://creativecommons.org/licenses/by-nc-sa/4.0/[Creative
 Commons Attribution-NonCommercial-ShareAlike] license.
 
-It is recommended you get familiar with Scala via the first part via the
-example `.scala` files provided and loading them into the Scala REPL and
-exploring on your own. Inside the example Scala source files I have some
-comments to help guide you through it but if you feel it is beating a dead
-horse then you should increase the pace.
-
-In the second part, I will link back to the sections in the first part (TODO)
-that are relevant to the examples at hand in that subsection. So if you prefer
-to get to the meat, then you can just skip to the second part 'Parts to Avoid
-(And Their Alternatives)' and then get familiar with the relevant language
-features *inline* with the design and philosophy discussion. You should
-choose the path that suits your learning style best.
-
-== Important Bits
-
-=== Scala REPL
-
-The first thing you must learn about Scala is that it has a REPL. This allows
-you to play around with code interactively. Not only will this help you learn
-Scala the language, but as you discover new libraries and APIs it will allow
-you to understand how to use them better and more quickly with faster feedback.
-
-Assuming you have Scala installed and in your `PATH`, you should be able to
-type `scala` into your shell. When you do, you should see something like this:
-
-[source]
-----
-$ scala
-Welcome to Scala version 2.11.4 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_25).
-Type in expressions to have them evaluated.
-Type :help for more information.
-
-scala>
-----
-
-=== Functions
-
-Now let's just get started defining some functions in Scala:
-
-[source,scala]
-----
-include::functions.scala[]
-----
-
-Load link:functions.scala[] into your Scala REPL and play with it. To do this start
-a Scala REPL in your shell from this directory and then at the prompt type:
-
-[source,scala]
-----
-scala> :load functions.scala
-Loading functions.scala...
-defined object sgfunctions
-
-scala> import sgfunctions._
-import sgfunctions._
-
-scala> :t f1
-Int => Int
-----
-
-Now explore on your own. If you need pointers type `:help` at the `scala>`
-prompt and then experiment. It can only tell you no. It won't hurl abuse
-at you. Wait, till you meet the Scala compiler (`scalac`) and try doing
-typelevel stuff for that. ;)
-
-[NOTE]
-====
-.A few notes on terminology for those new to functional programming not just Scala:
-* Functions can and should just be thought of as another kind of value
-* You can pass around functions in Scala as arguments to other functions
-* Functions can also evaluate to a function value as it's result
-* A function that accepts a function as argument or returns a function
-  as a result is known as a higher order function (or HOF).
-* If a function accepts functions as arguments and also evaluates to a
-  function, then we call the special case of a HOF a _combinator_.
-====
-
-=== Parametric Polymorphism
-
-If you are familiar with object oriented programming you might be familiar with the
-term polymorphism. There are different types, the two we are concerned with
-in Scala primarily are paramteric and ad-hoc polymorphism.
-
-When we have a function that is defined the same regardless of a the types used
-(as long as they line up with the type signature once the type parameters are
-filled in) this is called parametric polymorphism. For example, look at the
-following function signatures:
-
-[source,scala]
-----
-def defaultWith[A](a: A)(ma: Option[A]) = ma match {
-  case Some(x)  => x
-  case None     => a
-}
-def mapOver[A, B](f: A => B)(as: List[A]) = as map f
-def reduce[A](f: (A, A) => A)(as: List[A]) = sys.error("TODO")
-----
-
-You will notice above that we require zero knowledge of what the parameterized
-type we are acting on is.
-
-We declare all type parameter names in square brackets before parameter
-groups are declared. All `A`s and `B`s in the same function declaration must
-line up and be the same when applied.
-
-For example,
-
-[source,scala]
-----
-val timeoutOpt: Option[Duration] = ...
-val timeout: Duration = defaultWith(30 seconds)(timeoutOpt)
-----
-
-We will get to an interesting form of Ad Hoc Polymorphism using implicit
-parameters later but for now just know that this other form of polymorphism
-requires additional knowledge about the the types which can be retrieved
-via various mechanisms. In many mainstream OO languages this can be achieved
-via method overriding a known interface.
-
-=== Composition
-
-Let's look at a Scala REPL session I started that loaded the previous
-`functions.scala` file in:
-
-[source,scala]
-----
-scala> :load functions.scala
-Loading functions.scala...
-defined object sgfunctions
-
-scala> import sgfunctions._
-import sgfunctions._
-
-scala> transformText(lowerCase, "YO YO YO DAWG")
-res0: String = yo yo yo dawg
-
-scala> transformText(prefix("$ "), "ls -la")
-res1: String = $ ls -la
-
-scala> transformText(parens, "I love you")
-res2: String = (I love you)
-----
-
-Here we are using a higher order function (HOF) called `transformText`
-which I defined in the `sgfunctions` object of the examples.
-
-Now this is all well and nice, but what's the point of showing this
-code?
-
-Well so far it's not that interesting so let's explore a concept that
-comes from mathematics. OMG MATHZ!!!11
-
-Yeah, it's gonna come up again. Pretty soon but don't worry, it's our
-friend.
-
-.Composition is a simple way to line up functions when their types
-line up.
-
-What would this look like for our example. Say we wanted to `parens`
-a peice of text and then prefix it. Well we already wrote the definitions
-of each part. I don't want to now have to define a `parensAndPrefix`
-function now.
-
-Great news, we don't have to. Instead we just do this:
-
-[source,scala]
-----
-scala> transformText(parens _ andThen prefix("$ ") _, "ls -la")
-res6: String = $ (ls -la)
-----
-
-Alternatively we could say this for the same result:
-
-[source,scala]
-----
-scala> transformText(prefix("$ ") _ compose parens _, "ls -la")
-res7: String = $ (ls -la)
-----
-
-I find the first reads better for thos that are newer to these ideas.
-It's there, use it if it works for you and improves understandability of
-your code.
-
-=== Partial Functions
-
-Let us have an uncomfortable chat for a moment. Mathematics is a beautiful
-creature. I will be talking about mathematical concepts at various points in
-this tutorial. Here's a secret, it is very well guarded too so please don't
-spread it, but ... I love mathematics. I knew I had a math(s) problem the
-moment I laid eyes on it's elegant and unambiguous definitions, its clarity,
-and how well concepts neatly stacked on top of each other producing patterns
-at all levels of abstraction.
-
-When we talk about functions in functional programming we are getting this
-from mathematics. We have a _domain_ of the function which is the set
-of possible inputs for the function.
-
-We can define some functions in Scala like so:
-
-[source,scala]
-----
-def incr(x: Int): Int = x + 1 // <1>
-def decr(x: Int): Int = x - 1 // <2>
-def double(x: Int): Int = 2*x // <3>
-----
-<1> increments input by one
-<2> decrements input by one
-<3> doubles input
-
-Ignoring the finite bounds of type bounds in computers for a second,
-all of these functions are essentially _total functions_. This means that
-every possible value in the function's _domain_ can be evaluated for each
-function.
-
-Now if we look at the following function definition:
-
-[source,scala]
-----
-def f(x: Int): Double = (2*x + 3) / x
-----
-
-There is now one value that cannot produce a result for this function, `f`.
-That value is zero (0) because division by zero is, well, ... not well defined.
-
-This function, `f`, is a partial function. Scala supports the notion of
-partial functions in it's standard library. Let's play in the REPL:
-
-[source,scala]
-----
-scala> val pf = new PartialFunction[Int, Int] {
-     |   def apply(x: Int): Int = (2*x + 3) / x
-     |   def isDefinedAt(x: Int): Boolean = (x != 0)
-     | }
-pf: PartialFunction[Int,Int] = <function1>
-
-scala> pf.isDefinedAt(5)
-res0: Boolean = true
-
-scala> pf.isDefinedAt(1)
-res1: Boolean = true
-
-scala> pf.isDefinedAt(0)
-res2: Boolean = false
-
-scala> pf.isDefinedAt(-78)
-res3: Boolean = true
-
-scala> pf(5)
-res4: Int = 2
-
-scala> pf(1)
-res5: Int = 5
-
-scala> pf(-78)
-res6: Int = 1
-----
-
-So now we can have the caller use the `isDefinedAt` method on the
-`PartialFunction` value returned before calling the function with the
-input to determine if the function should be called or not.
-
-You typically want to use this when, for specific values of input,
-the function may crash or return an unreasonable result for whatever
-reason.
-
-[WARNING]
-====
-A partial function is not the same as a _partially applied function_.
-
-All the latter means is that not all parameter groups have been supplied
-to fully evaluate the final value result of the function.
-====
-
-=== Traits
-
-Traits in Scala are very similar to Java's interfaces, although more flexible.
-
-In Java 8, Java now has the capability of defining default implementations
-for interface methods that can be overrided further down the hierarchy. This
-has been possible in Scala, well at least since 2.8 when I started using it in
-earnest.
-
-Here's an example:
-
-[source,scala]
-----
-trait Worker {
-  def interval: Int = 30
-  def init(c: Config): Unit
-  def finish(r: Reason): Unit
-  def run: Unit
-}
-----
-
-You can see here we defined a default implementation for `interval`.
-
-I use `trait`s and `abstract class`es in Scala to declare the names
-of my (interface) types. These are the only custom types that should
-ever appear in type signatures for functions as a general rule. This
-is where other Scala developers will disagree, but this is the point
-of having an opinionated guide to Scala. Right? :) Play in your REPL,
-build Scala programs, and read around the topic more. Through experience
-you will form your own opinion, but remember when you come back to this
-general rule that we can still be friends (just not BFFs) if you choose
-as different Scala path!
-
-I generally dislike using `traits` to define interfaces the way you
-would think about them in Java. We'll get back to that later in the
-'Parts To Avoid'.
-
-=== Case Classes & Case Objects
-
-Case classes are a simple way to define value constructors for your _types_
-(e.g. `trait` or `abstract class` definitions). For example,
-
-[source,scala]
-----
-trait User
-case class Admin(login: String) extends User
-case class Editor(login: String, canEditOthers: Boolean) extends User
-case class Author(login: String, canSubmitWork: Boolean) extends User
-----
-
-Here we have three subtypes of `User` defined in this scope. We have
-arguments we can pass in to each case class (or value constructor).
-
-Now there is also the notion of a `case object`. Let's see when we
-might use that instead:
-
-[source,scala]
-----
-trait Direction
-case object North extends Direction
-case object South extends Direction
-case object East extends Direction
-case object West extends Direction
-----
-
-So we don't need to pass in any arguments. The value constructors
-pretty much define the specific value of the type `Direction`
-completely without additional context in this case.
-
-If you load the link:caseobjects.scala[] file a run the `DirectionMain`
-object (`import sgcaseobjects._; DirectionMain.main(Array.empty[String])`)
-then you can see that case objects (as well as case classes) have some
-methods already overridden to remove some extra boilerplate from the app
-developer's plate. Namely Java's `equals`, `hashCode`, and `toString`.
-
-Let's see what my Scala REPL (shell) session showed me:
-
-[source,scala]
-----
-scala> :load caseobjects.scala
-Loading caseobjects.scala...
-defined object sgcaseobjects
-
-scala> import sgcaseobjects._
-import sgcaseobjects._
-
-scala> DirectionMain.main(Array.empty[String])
-North.toString: North
-South.hashCode: 80075181
-Is West East? false
-Is East East? true
-What is this thing? OtherDirection(55)
-----
-
-Play around more and investigated.
-
-One other thing `case` objects and classes offer is hidden boilerplate
-to enable pattern matching which we will explore in the next section.
-
-=== Pattern Matching
-
-Scala has a builtin mechanism that allows us to on any sort of data
-construction in an ordered, first-match fashion. This is called
-pattern matching. What do I mean by this? We've already seen one
-example of this above so let's look at more examples:
-
-[source,scala]
-----
-include::holidays.scala[]
-----
-
-See link:holidays.scala[] for source.
-
-There were two examples above of pattern matching. One based on case value
-constructors and the other based on type discrimination of the value in an
-overly general case.
-
-A more simplistic example based on raw values that resembles switch/case
-statements in other languages is also possible like so:
-
-[source,scala]
-----
-include::dayofweek.scala[]
-----
-
-See link:dayofweek.scala[] for source.
-
-Above we convert from an `Int` value to a case object that we can use in our
-program logic.
-
-
-=== Singleton Objects
-
-We have already seen examples of `object`s. These are typically used for
-namespacing functions as you cannot create an instance of this construct
-like you can with classes.
-
-See below for an example:
-
-[source,scala]
-----
-object Yolo {
-  def wtf[A](xs: List[A]): A = xs.head // <1>
-  def sqrt(x: Double): Double = Math.sqrt(x) // <2>
-}
-
-// We use the functions contained in Yolo like so:
-val d: Double = Yolo.sqrt(7.6)
-val h: String = Yolo.wtf(List.empty[String]) // thank me later :)
-----
-<1> This is dangerous to do...can you think why? If not Google :)
-<2> This is also dangerous and we'll see why later in the second part.
-
-We can also use singleton objects to extend from `App` object which
-will give us a way to run a program in Scala and provide the implicit
-`main` in the body of the object.
-
-For example
-
-[source,scala]
-----
-object YoloMain extends App {
-  val d: Double = Yolo.sqrt(7.6)
-  println("sqrt of 7.6 is: " + d)
-  val h: String = Yolo.wtf(List.empty[String]) // thank me later :)
-  println("what happened here?")
-}
-----
-
-We can run this with the following `YoloMain.main(Array.empty[String])`.
-
-=== Companion Objects
-
-There is a special thing call companion objects which is basically just
-an `object` in Scala that is named after a trait or abstract class
-(technically any `class` but let's pretend I didn't say that since we
-shouldn't need to define any plain OO-style classes the majority of
-the time).
-
-You must define the companion object in the same file as the trait
-or abstract class.
-
-[source,scala]
-----
-abstract class WorkerType(hasBenefits: Boolean)
-// define case class or case object value constructors extending WorkerType here
-object WorkerType {
-  case object FullTimeEmployee extends WorkerType(true)
-  case class PartTimeEmployee(weeklyHours: Int) extends WorkerType(false)
-  case object Contractor extends WorkerType(false)
-
-  // body of companion object
-  // "class-level" methods on WorkerType here
-}
-----
-
-Companion objects have special methods `apply` and `unapply`, which assist
-with improving value construction and extracting values in pattern matching
-case clauses respectively.
-
-A companion object with an `unapply` method is also called an extractor
-object but that is just in case you come across the term. It's not very
-special besides that.
-
-Above we saw some examples of `apply` for the `DayOfWeek` type, which
-accepted an `Int` input and returned a case object value that represents
-the days of the week. See link:dayofweek.scala.
-
-.Some points to note are:
-* The `apply` method in `DayOfWeek` companion object returns a `Option[DayOfWeek]`.
-  This is necessary because we cannot represent all `Int` values as a `DayOfWeek`.
-  To express that it is good to return an `Option[A]` where `A` is your type.
-* We can refer to constants or enum `Int` values in Java types in the case clause
-  for primitive values, e.g. `Calendar.SUNDAY`. This helps us scan the code
-  and the compiler will report any typos at compile time so we have higher
-  assurance that the code we wrote is doing what we actually expect. Do you
-  know if the day of week `Int` constants representing the days of the week
-  in `Calendar` start from `1` or start from `0`? You don't need to, nor do you
-  need to worry about whether this changed between major versions of Java.
-
-Now let's look at an example of an `unapply` extractor method:
-
-[source,scala]
-----
-import java.util.Calendar
-
-object UpCased {
-  def unapply(s: String): Boolean = (s.toUpperCase == s)
-}
-
-object DownCased {
-  def unapply(s: String): Boolean = (s.toLowerCase == s)
-}
-
-object InternetMinor {
-  def unapply(i: Int): Boolean = (i < 13)
-}
-
-case class User(login: String, fullName: String, age: Int)
-
-// Using these extractors
-def reportUserCreationSuccess(u: User) =
-  user match {
-    case User(_, _, age @ InternetMinor()) =>
-      println("You are too young to create an account")
-    case u =>
-      println("Hooray! You can create an account")
-  }
-
-// reportUserCreationSuccess(User("mbbx6spp", "Susan Potter", 27)) // what is a white lie between friends?
-// reportUserCreationSuccess(User("elliphant", "Ellinor O", 29))
-// reportUserCreationSuccess(User("pandabear", "Panda", 11))
-----
-
-=== Sealed
-
-This keyword just means that whatever you seal (e.g. trait, abstract class, etc.)
-cannot be extended outside of the file it was defined within.
-
-This makes using the Java conventions of one interface or class per source
-file not something that can be done easily if you want to build a closed
-type with extensions to the kind of entity you are creating sealed.
-
-[source,scala]
-----
-// inside operators.scala
-sealed trait Operator
-case class Addition(lhs: Int, rhs: Int) extends Operator
-
-// inside anotherfile.scala but same package
-case class Multiplication(x: Int, y: Int) extends Operator // results in compile error
-----
-
-=== Package Objects
-
-We have seen earlier that we can use objects to provide `apply` and `unapply`
-extractors in the form of a companion object for a trait or abstract class.
-(Is lying by omission really lying? These are the only two things you should
-be defining outside of case classes or case objects.)
-
-We have also seen that we can define case objects that are akin to flyweights
-(assuming you are familiar with that OO design pattern). If not, I just mean
-defining a value constructor that takes no arguments to differentiate it
-further. E.g. `EmptyList`, `ActivatedUserStatus`, ... there can and should
-be only one way to construct the value of these _things_.
-
-Another use of defining objects is for the purpose of packaging. The main
-reason these were created was because inside a package you can only define
-traits, classes, and objects at the top level. Sometimes you might want
-to define a convenience method or even a constant value. This is where
-package objects come in handy. Also type aliases can be defined inside a
-package object.
-
-Let's look at an example:
-
-[source,scala]
-----
-package my.awesomesauce
-
-val SHA = "ae6590bc"
-def doubler(x: Int): Int = 2*x
-
-// this will not compile
-----
-
-[source,scala]
-----
-package my
-
-package object awesomesauce {
-  val SHA = "ae6590bc"
-  def doubler(x: Int): Int = 2*x
-}
-
-object Main extends App {
-  println(awesomesauce.SHA)
-  println("Double of 3 is: " + awesomesauce.doubler(3))
-
-  // if we really wanted to we could do this:
-  //import awesomesauce._
-  //println(SHA)
-  //println("Double of 3 is: " + doubler(3))
-}
-
-----
-
-=== Type Aliases
-
-When you have a type that needs a better name than it's signature, you can (and
-should use it's type alias).
-
-[source,scala]
-----
-// This stands for psuedo random number generator.
-// This will name a function signature of `() => Int` to PRNG.
-// Only do this if the consumer of your code will find this more intuitive
-// than the signature `() => Int`.
-type PRNG = () => Int
-
-// Perhaps a more compelling case for a type alias might be:
-type SocketGenerator = java.net.SocketAddress => java.net.Socket
-
-// You might use this like so:
-def createSocket: SocketGenerator = (new Socket()).connect(_)
-----
-
-TODO: elaborate more on this with better examples.
-
-
-
-=== Implicit Parameters
-
-TODO
-
-=== Useful Types (stdlib)
-
-TODO
-
-=== Useful Types (scalaz)
-
-TODO
-
-.TODO: brief introduction to the following:
-* implicit parameters
-* type constructors
-* type aliases
-* useful types (stdlib)
-* useful types (scalaz)
-
+I recommend you are comfortable with link:appendix/FUNCTIONS.asciidoc[defining
+functions], link:appendix/PARAMETRIC_POLYMORPHISM.asciidoc[parametric
+polymorphism], link:appendix/COMPOSITION.asciidoc[composition],
+link:appendix/PATTERN_MATCHING.asciidoc[pattern matching], and of course
+working inside link:appendix/REPL.asciidoc[the Scala REPL] before proceeding
+with the Quickstart section.
+
+include::QUICKSTART.asciidoc[]
 
 == Parts To Avoid (And Their Alternatives)
 
-Scala is a kitchen sink language. This has pros and cons. In reality you
-cannot please everyone and the Scala community has had its fair share of
-drama in part due to its _kitchen sink philosophy_.
+Scala is a kitchen sink language. This has pros and cons.
 
-.It does, however, offer:
-* a well typed language (assuming you know how to harness the power of its
-  type system)
-* a language with standard library that is production ready
+It does offer:
+
+* a well typed language (within reason and when you know where to look)
+* a language with standard library that is production hardened
 * a compiler that generates fairly performant JVM bytecode in many cases
   (at least compared to other non-Java JVM language offerings)
 * JVM language tooling that is evolving into maturity (I cannot comment on
@@ -689,12 +52,26 @@ Until a viable alternative is proposed for the JVM (the runtime I typically
 need to target at work), the trick for me is to know what parts of the
 kitchen sink language to avoid.
 
-The following subsections will discuss the parts of the language I think you
-should avoid when first diving in and what alternative constructs to use.
+Each of the sections in this part will discuss the parts and styles of Scala
+you should avoid to follow a more declarative and functional style. My claim
+is that following a more declarative and functional style of software
+structure is more maintainable and tends to ship with less bugs, but I don't
+have hard and fast quantitative evidence on this as every experiment I can think
+of designing that could provide evidence one way or another has major limitations.
+However, I can cite some limited studies and research (TODO) that offer some
+limited evidence to support these claims, though others suggest other studies
+support the opposing side too. :) Always be skeptical. Always.
+
+This is merely based on my own experience of building (from scratch) and
+evolving into maturity and maintaining large codebases in both OO and FP
+styles over the last 16 years. We will first dive in to what is typical in OO
+style and iterate to find valid alternative constructs to use.
 
 The general claim I make is that imperative and object oriented constructs of
 the language should be avoided except when wrapping or calling ill-defined
-Java or Scala dependencies from your code.
+Java or Scala dependencies from your code but these constructs should be
+encapsulated appropriately and not leaked out in the interfaces or APIs you
+offer clients.
 
 Let's begin.
 
@@ -706,22 +83,18 @@ core might be offended by reading the subsections under this 'Parts To Avoid'
 section.
 
 It might mean unlearning a considerable amount that you have immense muscle
-memory for. This can make a person feel quesy or unsettled. I just want you
-to know, it's ok. There is no judging here, just my strong opinions about
-what I have seen work and not work in Scala projects so far.
+memory for. This can make a person feel quesy or unsettled.
 
-This is the general complaint of mine that if you want to get more out of
+The general complaint of mine that if you want to get more out of
 Scala you shouldn't write Scala in an imperative object oriented way. Why
 not just write your code in Java? The savings of writing slightly less
 boilerplate code in Scala for the equivalent Java code is offset by the
 Scala overheads such as worse IDE support, more tooling headaches, Scala
 gotchas in the standard library that you might not be aware of already, and
-more.
+more. At least use Scala for the good stuff. :)
 
-Specifically you shouldn't need to write an AbstractFactoryFactory at any
-time. :)
+In my experience you should avoid these constructs in particular:
 
-.More seriously you should avoid these constructs in particular:
 * Stack unwinding exceptions
 * Imperative loops
 * OO classes
@@ -729,11 +102,11 @@ time. :)
 Ok, let's go explore the alternatives to these imperative and object oriented
 constructs.
 
-=== Avoid Stack Unwinding Exceptions
+==== Avoid Stack Unwinding Exceptions
 
 No matter your programming background it would be hard to avoid having seen
 a try/catch/finally or its equivalent in most imperative languages (e.g.
-Java, Ruby, Python, etc.). Scala also allows you to do this too.
+Java, C#, Ruby, Python, etc.). Scala also allows you to do this too.
 
 [source,scala]
 ----------------------------------------------------------------
@@ -765,7 +138,8 @@ This approach of throwing an `ArgumentException` is a problematic way to
 solve the issue, but is one that is commonly reached for. You are forcing the
 caller to have to either wrap their call to your function inside a try/catch
 or a try/finally block or "leak" an exception to its caller. This seems
-brittle at best.
+brittle at best. Exceptions were really meant to be for _exceptionally_
+unexpected conditions being met, e.g. `OutOfMemory`.
 
 Other times I have seen something like this to "solve" the issue, but this
 gives an incorrect result when the input is negative, which I am not fond of:
@@ -845,18 +219,18 @@ Let's see what this might look like:
 def parseUserIdFromQueryString(s: String): Either[String, Int] =
   sys.error("todo")
 
-  // calling code would do something like...
-  parseUserIdFromQueryString(userInput) match {
-    case Left(reason) => println("Error: " + reason)
-    case Right(x)     => println("Result: " + x.toString)
-  }
+// calling code would do something like...
+parseUserIdFromQueryString(userInput) match {
+  case Left(reason) => println("Error: " + reason)
+  case Right(x)     => println("Result: " + x.toString)
+}
 
-  // However because Either does not have map/flatmap defined...we can't do:
-  // Assume: findByUserId type is `Int => User` and `User` is a custom type
-  for {
-    i <- parseUserIdFromQueryString(userInput) // only pull out if "success" or "right"
-    u <- findUserById(i) // not sure why you would do this; it's just for show
-  } yield u
+// However because Either does not have map/flatmap defined...we can't do:
+// Assume: findByUserId type is `Int => User` and `User` is a custom type
+for {
+  i <- parseUserIdFromQueryString(userInput) // only pull out if "success" or "right"
+  u <- findUserById(i) // not sure why you would do this; it's just for show
+} yield u
 ----------------------------------------------------------------
 
 The above code now gives us a reason (as a String) for why we don't get
@@ -988,7 +362,6 @@ flower:
 I mean it. Just think for a moment and meditate.
 
 
-
                                                   ____
        ___                                      .-~. /_"-._
       `-._~-.                                  / /_ "~o\  :Y
@@ -1043,12 +416,29 @@ to illustrate the point. This doesn't prove anything. It is just an
 illustration that you don't need to use OO classes to model this case
 well (arguably better than using OO patterns).
 
-==== Illustration: Closed Types
+==== Alternative #1: Closed Types
 
-Let's say you are building a CI/CD pipeline in Scala. Why not? Ok, now
+Let's say you are building a CI/CD pipeline in Scala. Why not? Now
 we want to model the following "world" in software:
 
 * We have four different environments: local, integ, staging, production.
+  See link:appendix/ALGEBRAIC_ABSTRACTIONS.asciidoc[] for the section on
+  _'Algebraic Data Types'_ if not already familiar with how to define sum
+  types in Scala. For our needs here we might do:
+
+[source,scala]
+----
+sealed trait Environment
+object Environment { // this is a companion class for Environment trait
+  // these are the 'value constructors' as I call them for the _type_
+  // Environment.
+  final case object Local extends Environment
+  final case object Integ extends Environment
+  final case object Staging extends Environment
+  final case object Production extends Environment
+}
+----
+
 * Developers make their changes for new features or bugfixes in their
   local environment first, write tests (hopefully), add those tests
   to the test suite, and submit a code review for the rest of the team
@@ -1389,7 +779,12 @@ since the language itself doesn't support typeclasses directly. (Note:
 technically the Clojure language doesn't support typeclasses as first
 class idea since defining a protocol is just a macro.)
 
-==== Illustration: Extending Types
+==== Alternative #2: Decoupled, Extensible Interfaces
+
+Sometimes you can't just use close types to model your requirements in software.
+This section will look at a way to define extensible yet decoupled but type
+safe interfaces in Scala using implicit parameters (among other things) to
+mimick Haskell's typeclasses (though slightly differently).
 
 So let's say you have this SaaS application already shipped and it's a
 cool app but your customers (aka tenants) are asking for a better
@@ -1408,7 +803,7 @@ iterative fashion, one endpoint at a time which will be validated and
 delivered to "beta" tenants and internal users as they are available.
 
 After much research you choose Scala as the language because ... well who
-cares why honestly. You chose it for the purposes of this illustration. :)
+cares why honestly. You chose it for the purposes of this tutorial. :)
 
 Let's pretend we already ported over the Identity, AuthN and AuthZ parts of
 the code to the JVM and this is available as a library for your Scala service.
@@ -1618,3 +1013,41 @@ include::ordering.scala[]
 
 See link:ordering.scala[] for the source if this doesn't render correctly.
 
+
+== Appendix
+
+include::appendix/REPL.asciidoc[Scala REPL]
+
+include::appendix/FUNCTIONS.asciidoc[Functions]
+
+include::appendix/COMPOSITION.asciidoc[Composition]
+
+include::appendix/PARAMETRIC_POLYMORPHISM.asciidoc[Parametric Polymorphism]
+
+include::appendix/PARTIAL_FUNCTIONS.asciidoc[Partial Functions]
+
+include::appendix/TRAITS.asciidoc[Traits]
+
+include::appendix/CASE_CLASSES.asciidoc[Case Classes (and Objects)]
+
+include::appendix/PATTERN_MATCHING.asciidoc[Pattern Matching]
+
+include::appendix/SINGLETON_OBJECTS.asciidoc[Singleton Objects]
+
+include::appendix/COMPANION_OBJECTS.asciidoc[Companion Objects]
+
+include::appendix/SEALED.asciidoc[Sealed]
+
+include::appendix/PACKAGE_OBJECTS.asciidoc[Package Objects]
+
+include::appendix/TYPE_ALIASES.asciidoc[Type Aliases]
+
+include::appendix/IMPLICIT_PARAMETERS.asciidoc[Implicit Parameters]
+
+include::appendix/USEFUL_TYPES_STDLIB.asciidoc[Useful Types (stdlib)]
+
+include::appendix/USEFUL_TYPES_SCALAZ.asciidoc[Useful Types (Scalaz)]
+
+include::appendix/TYPE_CONSTRUCTORS.asciidoc[Type Constructors]
+
+include::appendix/ALGEBRAIC_ABSTRACTIONS.asciidoc[Algebraic Abstractions]

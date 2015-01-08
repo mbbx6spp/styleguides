@@ -1,0 +1,62 @@
+=== Case Classes & Case Objects
+
+Case classes are a simple way to define value constructors for your _types_
+(e.g. `trait` or `abstract class` definitions). For example,
+
+[source,scala]
+----
+trait User
+case class Admin(login: String) extends User
+case class Editor(login: String, canEditOthers: Boolean) extends User
+case class Author(login: String, canSubmitWork: Boolean) extends User
+----
+
+Here we have three subtypes of `User` defined in this scope. We have
+arguments we can pass in to each case class (or value constructor).
+
+Now there is also the notion of a `case object`. Let's see when we
+might use that instead:
+
+[source,scala]
+----
+trait Direction
+case object North extends Direction
+case object South extends Direction
+case object East extends Direction
+case object West extends Direction
+----
+
+So we don't need to pass in any arguments. The value constructors
+pretty much define the specific value of the type `Direction`
+completely without additional context in this case.
+
+If you load the link:caseobjects.scala[] file a run the `DirectionMain`
+object (`import sgcaseobjects._; DirectionMain.main(Array.empty[String])`)
+then you can see that case objects (as well as case classes) have some
+methods already overridden to remove some extra boilerplate from the app
+developer's plate. Namely Java's `equals`, `hashCode`, and `toString`.
+
+Let's see what my Scala REPL (shell) session showed me:
+
+[source,scala]
+----
+scala> :load caseobjects.scala
+Loading caseobjects.scala...
+defined object sgcaseobjects
+
+scala> import sgcaseobjects._
+import sgcaseobjects._
+
+scala> DirectionMain.main(Array.empty[String])
+North.toString: North
+South.hashCode: 80075181
+Is West East? false
+Is East East? true
+What is this thing? OtherDirection(55)
+----
+
+Play around more and investigated.
+
+One other thing `case` objects and classes offer is hidden boilerplate
+to enable pattern matching which we will explore in the next section.
+

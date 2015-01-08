@@ -1,0 +1,42 @@
+=== Parametric Polymorphism
+
+If you are familiar with object oriented programming you might be familiar with the
+term polymorphism. There are different types, the two we are concerned with
+in Scala primarily are paramteric and ad-hoc polymorphism.
+
+When we have a function that is defined the same regardless of a the types used
+(as long as they line up with the type signature once the type parameters are
+filled in) this is called parametric polymorphism. For example, look at the
+following function signatures:
+
+[source,scala]
+----
+def defaultWith[A](a: A)(ma: Option[A]) = ma match {
+  case Some(x)  => x
+  case None     => a
+}
+def mapOver[A, B](f: A => B)(as: List[A]) = as map f
+def reduce[A](f: (A, A) => A)(as: List[A]) = sys.error("TODO")
+----
+
+You will notice above that we require zero knowledge of what the parameterized
+type we are acting on is.
+
+We declare all type parameter names in square brackets before parameter
+groups are declared. All `A`s and `B`s in the same function declaration must
+line up and be the same when applied.
+
+For example,
+
+[source,scala]
+----
+val timeoutOpt: Option[Duration] = ...
+val timeout: Duration = defaultWith(30 seconds)(timeoutOpt)
+----
+
+We will get to an interesting form of Ad Hoc Polymorphism using implicit
+parameters later but for now just know that this other form of polymorphism
+requires additional knowledge about the the types which can be retrieved
+via various mechanisms. In many mainstream OO languages this can be achieved
+via method overriding a known interface.
+

@@ -1,0 +1,90 @@
+=== Partial Functions
+
+Let us have an uncomfortable chat for a moment. Mathematics is a beautiful
+creature. I will be talking about mathematical concepts at various points in
+this tutorial. Here's a secret, it is very well guarded too so please don't
+spread it, but ... I love mathematics. I knew I had a math(s) problem the
+moment I laid eyes on it's elegant and unambiguous definitions, its clarity,
+and how well concepts neatly stacked on top of each other producing patterns
+at all levels of abstraction.
+
+When we talk about functions in functional programming we are getting this
+from mathematics. We have a _domain_ of the function which is the set
+of possible inputs for the function.
+
+We can define some functions in Scala like so:
+
+[source,scala]
+----
+def incr(x: Int): Int = x + 1 // <1>
+def decr(x: Int): Int = x - 1 // <2>
+def double(x: Int): Int = 2*x // <3>
+----
+<1> increments input by one
+<2> decrements input by one
+<3> doubles input
+
+Ignoring the finite bounds of type bounds in computers for a second,
+all of these functions are essentially _total functions_. This means that
+every possible value in the function's _domain_ can be evaluated for each
+function.
+
+Now if we look at the following function definition:
+
+[source,scala]
+----
+def f(x: Int): Double = (2*x + 3) / x
+----
+
+There is now one value that cannot produce a result for this function, `f`.
+That value is zero (0) because division by zero is, well, ... not well defined.
+
+This function, `f`, is a partial function. Scala supports the notion of
+partial functions in it's standard library. Let's play in the REPL:
+
+[source,scala]
+----
+scala> val pf = new PartialFunction[Int, Int] {
+     |   def apply(x: Int): Int = (2*x + 3) / x
+     |   def isDefinedAt(x: Int): Boolean = (x != 0)
+     | }
+pf: PartialFunction[Int,Int] = <function1>
+
+scala> pf.isDefinedAt(5)
+res0: Boolean = true
+
+scala> pf.isDefinedAt(1)
+res1: Boolean = true
+
+scala> pf.isDefinedAt(0)
+res2: Boolean = false
+
+scala> pf.isDefinedAt(-78)
+res3: Boolean = true
+
+scala> pf(5)
+res4: Int = 2
+
+scala> pf(1)
+res5: Int = 5
+
+scala> pf(-78)
+res6: Int = 1
+----
+
+So now we can have the caller use the `isDefinedAt` method on the
+`PartialFunction` value returned before calling the function with the
+input to determine if the function should be called or not.
+
+You typically want to use this when, for specific values of input,
+the function may crash or return an unreasonable result for whatever
+reason.
+
+[WARNING]
+====
+A partial function is not the same as a _partially applied function_.
+
+All the latter means is that not all parameter groups have been supplied
+to fully evaluate the final value result of the function.
+====
+

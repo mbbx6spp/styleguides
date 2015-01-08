@@ -1,0 +1,20 @@
+=== Scala REPL
+
+The first thing you must learn about Scala is that it has a REPL. This allows
+you to play around with code interactively. Not only will this help you learn
+Scala the language, but as you discover new libraries and APIs it will allow
+you to understand how to use them better and more quickly with faster feedback.
+
+Assuming you have Scala installed and in your `PATH`, you should be able to
+type `scala` into your shell. When you do, you should see something like this:
+
+[source]
+----
+$ scala
+Welcome to Scala version 2.11.4 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_25).
+Type in expressions to have them evaluated.
+Type :help for more information.
+
+scala>
+----
+
