@@ -10,6 +10,22 @@ start up. It consumes less time if we just for a set of conventions and
 standards that I am already happy with and iterate on that for the teams
 needs.
 
+## Intent
+
+Anyone is allowed to fork this repository and update the style guides
+for their own purposes and teams use.
+
+*A lot of this I don't really have strong opinions on (unless otherwise
+mentioned) the key is consistency of a codebase's style and conventions
+in a team setting with many people contributing. It reduces the maintenance
+costs of codebases if there is a shared understanding of standards and
+conventions that should be adhered to.*
+
+These should be enforced during review. When tools are available code
+conventions should be made _executable_ to avoid squabbling over ambiguities.
+
+## Structure
+
 There will be a `master` branch which will contain the coding styles,
 conventions and standards that I personally prefer. The `develop` branch
 may contain some tweaks I am playing with and haven't decided upon yet.
@@ -18,16 +34,13 @@ Other branches will be the living standard for the team, OSS project,
 etc. that I am an active participant in that doesn't mind this being
 public.
 
-Anyone is allowed to fork this repository and update the style guides
-for their own purposes and teams use.
+Each language will have the following structure:
 
-A lot of this I don't really have strong opinions on (unless otherwise
-mentioned) the key is consistency of a codebase's style and conventions
-in a team setting with many people contributing. It reduces the maintenance
-costs of codebases if there is a shared understanding of standards and
-conventions that should be adhered to.
-
-These should be enforced during review.
+ * languagename /
+   * README.md (or README.asciidoc or README.adoc)
+   * TUTORIAL.md (or TUTORIAL.asciidoc or TUTORIAL.adoc)
+   * any file format for language tooling that provides executable checking of
+     conventions that encode the standards.
 
 ## Philosophy
 
