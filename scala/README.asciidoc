@@ -1,0 +1,108 @@
+= scala
+
+I prefer to use the link:http://docs.scala-lang.org/style/[Scala Style Guide]
+found at scala-lang.org with the exception of the following overrides.
+
+== Scala Style Guide Overrides
+
+=== Packages
+
+Forget Java package naming conventions unless your Scala library is intended
+for that audience. The verbosity of `{com,net,org,io,...}.` prefixes on
+package names is so ... 1990s. I'm over it. Like Ace of Base.
+
+link:https://www.youtube.com/watch?v=DNPjeIamsck[Here] is some Ace of Base to
+remind you that you shouldn't use Java conventions (unless you have to) for
+packaging in Scala.
+
+One more no-no (of which I have been an offender) is relative importing of
+subpackages already imported. For example,
+
+[source,scala]
+----
+// Not ok - importing scalaz.effect._ relatively
+import scalaz._
+import Scalaz._
+import effect._
+
+// Good form
+import scalaz._
+import Scalaz._
+import scalaz.effect._
+----
+
+=== Accessors/Mutators
+
+Just don't mutate attributes. Period. Now this section is not really
+applicable (except the accessor convention part, which still holds).
+
+See the 'Accessors/Mutators' sections in the style guide
+link:http://docs.scala-lang.org/style/naming-conventions.html#accessorsmutators[here]
+for the parts of this that hold.
+
+=== Comprehensions
+
+for-comprehensions which lack a yield clause should never be used. All other
+parts of style in this section link:http://docs.scala-lang.org/style/control-structures.html#comprehensions[here]
+hold though.
+
+=== Files
+
+Ignore this section of the official Scala Style Guide. I will provide a
+file and structure convention that I think should be followed for more
+functional styles of code.
+
+== Dependencies
+
+=== Versions
+
+As of the time of writing new projects should not use a version of Scala less
+than 2.11.3 (the latest stable). Existing projects should keep up to date with
+the latest minor release of the same major (or beyond) as much as possible.
+
+=== Build Tool
+
+Scala projects that are primarily Scala with some Java should use SBT as a
+build tool. More polyglot projects might need to reconsider the build tool
+of choice based on their requirements.
+
+== Linting
+
+* Try to use one or more of the following linting or style checking tools:
+  * scalac-scapegoat (link:https://github.com/sksamuel/scalac-scapegoat-plugin[SBT plugin])
+    - typical linter checks, e.g unused method params, type shadowing, use of
+    var, slow list append, empty if, and much more.
+  * scalastyle (link:https://github.com/scalastyle/scalastyle-sbt-plugin[SBT plugin])
+    - typical code style checks, i.e. no static analysis checks like
+    scalac-scapegoat, so feel free to use together.
+  * WartRemover (link:https://github.com/typelevel/wartremover[SBT plugin]) - provides additional linting checks to first
+    option for the engineer concerned about type safety.
+
+== Project Structure
+
+Before considering package, file, dependency, and namespacing structure of
+functional Scala code, I'd like to recommend the following semantic structure:
+
+=== Typeclasses
+
+Forget OO classes. Typeclasses are basically decoupled interfaces. You can
+define an interface and at any time at or after the moment of declaring a
+specific type, you can attach an implementation for an in scope interface for
+that type.
+
+=== Types
+
+
+=== Instances
+
+
+=== Functions
+
+
+=== Namespaces
+
+For library, utility, or toolkit Scala projects here is a package (and file)
+structure I highly recommend for functional Scala projects:
+
+_TODO: Custom file and structure style guide for more functional Scala code
+bases._
