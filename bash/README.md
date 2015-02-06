@@ -53,6 +53,10 @@ prune, maintain, and question the purpose of your Bash scripts more easily.
 Consistency is the key. You can always fork this and modify the conventions
 to suit your team's preferences. That is kind of the point.
 
+There is also a document in this repo on [deprecated commands](COMMANDS.asciidoc)
+and their current alternatives (`ss` really is better than `netstat` so move
+on already). You should know this too to write better Bash scripts.
+
 Now you should evaluate appropriateness of use of Bash in the first place...
 
 ## Appropriateness
