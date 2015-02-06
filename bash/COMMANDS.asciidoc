@@ -1,0 +1,443 @@
+== Commands
+
+Some still widely used commands were deprecated on Linux a while ago (e.g.
+`netstat`). This document will discuss which commands are deprecated and
+should no longer be used in scripts and what alternatives there are for
+common usages of the commands.
+
+Subsection links:
+
+* <<deprecations>>
+* <<alternatives>>
+** <<ss>>
+** <<ip-addr>>
+** <<ip-route>>
+** <<ip-link>>
+** <<ip-neighbor>>
+** <<dig>>
+
+=== Deprecations
+
+The following commands which are still in popular usage are deprecated on Linux:
+
+* `netstat` - See NOTES section of your `netstat` man page which should
+  read: _This program is obsolete.  Replacement for `netstat` is `ss`.
+  Replacement for `netstat -r`  is `ip route`. Replacement for `netstat -i` is
+  `ip -s` link.  Replacement for `netstat -g` is `ip maddr`._
+* `arp` - Again see NOTES section of your `arp` man page. It should read:
+  _This program is obsolete. For replacement check `ip neighbor`._
+* `route` - yep, even `route` is deprecated on linux. The alternative is
+  `ip route`. Seeing a pattern yet?
+* `ifconfig` - Whadyaknow, check the NOTES section of your command man pages:
+  _This  program is obsolete!  For replacement check `ip addr` and `ip link`.
+  For statistics use `ip -s link`._
+* `nslookup` - This advisory from the BIND company has been given and is not
+  Linux specific (like the others here): link:http://cr.yp.to/djbdns/nslookup.html[
+  nslookup is deprecated and may be removed from future releases.] Popular and
+  maintained alternatives include `dig` and `host`.
+
+More obscure commands that are deprecated include:
+
+* `ipmaddr` - the utility to manage multicast addresses is also obsoleted.
+  I once again cite the NOTES section of a recent man page for this. The
+  alternative to use is `ip maddress`.
+* `iptunnel` - the utility to manage tunnels for sending IPV6 and IPV4 packets
+  which are encapsulated as the payload of an IPV4 datagram. Again this
+  is obsoleted as per the man page. The alternative is `ip tunnel`.
+* `nameif` - Allows you to name network interfaces given MAC addresses. The
+  alternative offered by the NOTES section of the man page is `ip link`.
+* `mii-tool` - Used to manipulate Media Independent Interface (MII) unit of
+  a given network interface. The NOTES section of the man page suggests using
+  `ethtool` instead.
+
+=== Alternatives
+
+Below are sections on the new and currently maintained (and mostly better)
+commands that should be used in place of `netstat`, `route`, `arp`, `nslookup`,
+and _:shudder:_ `ifconfig` in your scripts.
+
+==== ss
+
+This, like netstat, allows you to inspect sockets of all kinds. It is
+basically a replacement for `netstat` but IMO has nicer formatting and
+the command line interface is far more intuitive and expressive.
+
+Let's have a look at a couple of examples based on use cases:
+
+[source]
+----
+# list TCP (-t) connections with destination port 9200 (dst :9200) and
+# showing numeric port (-n) plus resolving DNS of addresses (-r).
+/usr/sbin/ss -rnt dst :9200
+----
+
+Output might look something like this:
+
+[source]
+----
+Recv-Q Send-Q                         Local Address:Port                           Peer Address:Port
+0      0                                  localhost:28655                             localhost:9200
+
+# OR
+
+Recv-Q Send-Q             Local Address:Port               Peer Address:Port
+0      0         mysvc1-app3.dc1.exampleapp.com:44541      logs.dc1.exampleapp.com:9200
+0      0         mysvc1-app3.dc1.exampleapp.com:33389      logs.dc1.exampleapp.com:9200
+0      0         mysvc1-app3.dc1.exampleapp.com:45740      logs.dc1.exampleapp.com:9200
+0      0         mysvc1-app3.dc1.exampleapp.com:53848      logs.dc1.exampleapp.com:9200
+0      0         mysvc1-app3.dc1.exampleapp.com:33406      logs.dc1.exampleapp.com:9200
+0      0         mysvc1-app3.dc1.exampleapp.com:33407      logs.dc1.exampleapp.com:9200
+0      0         mysvc1-app3.dc1.exampleapp.com:33405      logs.dc1.exampleapp.com:9200
+----
+
+Now this isn't very remarkable. Let's try to find TCP connections in
+`CLOSE_WAIT` state going to a specific destination address and port:
+
+[source]
+----
+# show all TCP connections in CLOSED_WAIT state
+$ /usr/sbin/ss -tarn state close-wait
+
+Recv-Q Send-Q                              Local Address:Port                                Peer Address:Port
+1      0         mysvc-app1.dc1.exampleapp.com:40701    mysvc-app1.dc1.exampleapp.com:50010
+1      0         mysvc-app1.dc1.exampleapp.com:29470    mysvc-app1.dc1.exampleapp.com:50010
+1      0         mysvc-app1.dc1.exampleapp.com:35594    mysvc-app1.dc1.exampleapp.com:50010
+1      0         mysvc-app1.dc1.exampleapp.com:39683    mysvc-app1.dc1.exampleapp.com:50010
+1      0         mysvc-app1.dc1.exampleapp.com:22715    mysvc-app1.dc1.exampleapp.com:50010
+1      0         mysvc-app1.dc1.exampleapp.com:23824    mysvc-app1.dc1.exampleapp.com:50010
+1      0         mysvc-app1.dc1.exampleapp.com:37015   mysvc-app10.dc1.exampleapp.com:50010
+1      0         mysvc-app1.dc1.exampleapp.com:28927    mysvc-app1.dc1.exampleapp.com:50010
+1      0         mysvc-app1.dc1.exampleapp.com:37298    mysvc-app1.dc1.exampleapp.com:50010
+1      0         mysvc-app1.dc1.exampleapp.com:42596   mysvc-app20.dc1.exampleapp.com:50010
+1      0         mysvc-app1.dc1.exampleapp.com:45345    mysvc-app1.dc1.exampleapp.com:50010
+----
+
+What about timers on sockets? Well, `ss` has what you want:
+
+[source]
+----
+# list all (-a) TCP sockets (-t) with resoled DNS (-r), numeric ports (-n) that
+# are in state of TIME_WAIT with timer information (-o).
+$ ss -arnto state time-wait
+
+Recv-Q Send-Q                              Local Address:Port                                Peer Address:Port
+0      0         mysvc-app1.dc1.exampleapp.com:21665                   ldap.dc1.exampleapp.com:389    timer:(timewait,22sec,0)
+0      0         mysvc-app1.dc1.exampleapp.com:45311   mysvc-app13.dc1.exampleapp.com:2191   timer:(timewait,24sec,0)
+0      0         mysvc-app1.dc1.exampleapp.com:21606                   ldap.dc1.exampleapp.com:389    timer:(timewait,2.730ms,0)
+0      0         mysvc-app1.dc1.exampleapp.com:40319    mysvc-app2.dc1.exampleapp.com:9092   timer:(timewait,4.949ms,0)
+0      0         mysvc-app1.dc1.exampleapp.com:37364   mysvc-app12.dc1.exampleapp.com:2191   timer:(timewait,28sec,0)
+0      0                                       localhost:39282                                  localhost:17123  timer:(timewait,54sec,0)
+
+----
+
+===== \^^ Look ma, no pipes! \^^
+
+Looking for which process is listening on a port? Simple:
+
+[source]
+----
+# Using -l we limit ourselves to listening sockets
+# Using -t we limit ourselves to TCP
+# Using -n we make sure the port is shown as numeric not alias (if we didn't
+# using -n in this case it would output `:arepa-cas` instead of `:3030`)
+# Using -r we resolve the hostnames
+# Using -p we show processes using that socket
+# Remember to get process information you usually need to sudo :)
+$ sudo ss -nltp state listening src :3030
+Recv-Q Send-Q                                                           Local Address:Port                                                             Peer Address:Port
+0      100                                                                  127.0.0.1:3030                                                                        *:*      users:(("sensu-client",46889,17))
+
+# Note the users output is a 3-tuple with the process name as first entry,
+# the PID as the second entry and _unknown_ third entry (to me). Anyone
+# know, it isn't explained in the man page.
+----
+
+==== ip addr
+
+If you are still using `ifconfig` in your scripts for whatever reason today
+you should consult this GIF and meditate on it for some time:
+
+http://giphy.com/gifs/wWEDxkj0qzjLa["Ashamed"]
+
+It's pretty simple to translate `ifconfig` to `ip addr` though so do it now
+to redeem yourself.
+
+[source]
+----
+$ ip addr list
+$ ip addr show eth0
+$ ip addr flush
+$ ip addr del eth1
+----
+
+See the section on `ip link` for some of the other use case alternatives you
+may need to remove `ifconfig` from your scripts completely.
+
+==== ip route
+
+Our favorite utility to manipulate and show IP routing table information
+(`route`) is now accessible (with only a little changes to your scripts)
+as `ip route`.
+
+You should also consult the content of the following proc files:
+
+* /proc/net/ipv6_route
+* /proc/net/route
+* /proc/net/rt_cache
+
+Here are some examples of `ip route` to get you started:
+
+[source]
+----
+$ ip route show # analog to route -n
+$ ip route show table local # shows local routing table
+$ ip route add table special default via 10.10.99.254
+$ ip route show cache 10.10.99.17
+----
+
+
+==== ip link
+
+For statistics about each network interface you would use `ip -s link`:
+
+[source]
+----
+$ ip -s link
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue state UNKNOWN
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    RX: bytes  packets  errors  dropped overrun mcast
+    2517932944 572286727 0       0       0       0
+    TX: bytes  packets  errors  dropped carrier collsns
+    2517932944 572286727 0       0       0       0
+2: eth0: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 1500 qdisc mq master bond0 state UP qlen 1000
+    link/ether d8:9d:XX:XX:XX:XX brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    53251834   2629874351 0       0       139     24805899
+    TX: bytes  packets  errors  dropped carrier collsns
+    3138311741 478983466 0       0       0       0
+3: eth1: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 1500 qdisc mq master bond0 state UP qlen 1000
+    link/ether d8:9d:XX:XX:XX:XX brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    433540864  2650911626 0       0       10599   24799446
+    TX: bytes  packets  errors  dropped carrier collsns
+    2015741505 908495232 0       0       0       0
+4: eth2: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether d8:9d:XX:XX:XX:XX brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    0          0        0       0       0       0
+    TX: bytes  packets  errors  dropped carrier collsns
+    0          0        0       0       0       0
+5: eth3: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether d8:9d:XX:XX:XX:XX brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    0          0        0       0       0       0
+    TX: bytes  packets  errors  dropped carrier collsns
+    0          0        0       0       0       0
+6: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    link/ether d8:9d:XX:XX:XX:XX brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    486792698  985818681 0       0       10738   49605345
+    TX: bytes  packets  errors  dropped carrier collsns
+    859085950  1387478698 0       0       0       0
+
+----
+
+For more basic information remove the `-s` option and the output will
+look more like the following:
+
+[source]
+----
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue state UNKNOWN
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: eth0: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 1500 qdisc mq master bond0 state
+UP qlen 1000
+    link/ether d8:9d:XX:XX:XX:30 brd ff:ff:ff:ff:ff:ff
+3: eth1: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 1500 qdisc mq master bond0 state
+UP qlen 1000
+    link/ether d8:9d:XX:XX:XX:31 brd ff:ff:ff:ff:ff:ff
+4: eth2: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether d8:9d:XX:XX:XX:32 brd ff:ff:ff:ff:ff:ff
+5: eth3: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether d8:9d:XX:XX:XX:33 brd ff:ff:ff:ff:ff:ff
+6: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    link/ether d8:9d:XX:XX:XX:30 brd ff:ff:ff:ff:ff:ff
+
+----
+
+==== ip neighbor
+
+In the case when you need to inspect or manipulate the ARP cache `ip neighbor`
+is your friend:
+
+[source]
+----
+$ ip neighbor show | head -10
+10.10.1.131 dev bond0 lladdr f0:XX:XX:XX:ca:65 REACHABLE
+10.10.1.109 dev bond0 lladdr f0:XX:XX:XX:1d:41 REACHABLE
+10.10.1.1 dev bond0 lladdr 00:XX:XX:XX:01:01 REACHABLE
+10.10.1.21 dev bond0 lladdr d8:XX:XX:XX:c6:01 REACHABLE
+10.10.1.145 dev bond0 lladdr e0:XX:XX:XX:de:ca STALE
+10.10.1.8 dev bond0 lladdr d8:XX:XX:XX:c3:58 STALE
+10.10.1.55 dev bond0 lladdr ac:XX:XX:XX:07:38 DELAY
+10.10.1.104 dev bond0 lladdr f0:XX:XX:XX:1d:2f STALE
+10.10.1.117 dev bond0 lladdr f0:XX:XX:XX:38:7e REACHABLE
+10.10.1.97 dev bond0 lladdr f0:XX:XX:XX:44:42 REACHABLE
+
+----
+
+There is also `ip neighbor (add|change|replace|delete)` as well as
+`ip neighbor flush`. Check the man page for more details on that for
+replacing your script uses of the `arp` command.
+
+==== dig
+
+Here I will provide quick examples to help you replace `nslookup` usages found
+in your scripts.
+
+First off let's start with a simple case: you want to find the IP form a
+fully qualified hostname:
+
+[source]
+----
+# +short is great for scripting as it gives you pretty much only what you want
+$ dig +short api.github.com A
+192.30.252.138
+$ dig +short api.github.com A
+192.30.252.139
+
+# Note this only gives you back one at a time with the +short option.
+# We could additionally add +identify option which would give us what server
+# replied with the answer.
+$ dig +short +identify api.github.com A
+192.30.252.139 from server 10.160.4.61 in 14 ms.
+
+# Of course sometimes we want the reverse lookup which we can use -x for
+$ dig +short +identify -x 192.30.252.139
+api.github.com. from server 10.160.4.61 in 91 ms.
+----
+
+Sometimes we want a little more information:
+
+[source]
+----
+$ dig gmail.com MX +noall +answer
+
+; <<>> DiG 9.8.2rc1-RedHat-9.8.2-0.10.rc1.el6 <<>> gmail.com MX +noall +answer
+;; global options: +cmd
+gmail.com.              1537    IN      MX      10 alt1.gmail-smtp-in.l.google.com.
+gmail.com.              1537    IN      MX      40 alt4.gmail-smtp-in.l.google.com.
+gmail.com.              1537    IN      MX      20 alt2.gmail-smtp-in.l.google.com.
+gmail.com.              1537    IN      MX      30 alt3.gmail-smtp-in.l.google.com.
+gmail.com.              1537    IN      MX      5 gmail-smtp-in.l.google.com.
+
+# Or the short output looks like this:
+
+$ dig gmail.com MX +short
+40 alt4.gmail-smtp-in.l.google.com.
+30 alt3.gmail-smtp-in.l.google.com.
+5 gmail-smtp-in.l.google.com.
+10 alt1.gmail-smtp-in.l.google.com.
+20 alt2.gmail-smtp-in.l.google.com.
+
+# Probably better for scripting anyway.
+----
+
+If you have internal DNS servers that allow AXFR to transfer you can do this
+in `dig`:
+
+[source]
+----
+$ dig yourdomain.com AXFR
+----
+
+Maybe you want to check against a specific DNS server:
+
+[source]
+----
+$ dig @ns1.google.com www.google.com +short
+74.125.28.106
+74.125.28.105
+74.125.28.104
+74.125.28.103
+74.125.28.99
+74.125.28.147
+----
+
+Or even this for a CNAME lookup:
+
+[source]
+----
+$ dig @ns1.google.com keep.google.com CNAME +short
+www3.l.google.com.
+----
+
+What about IPv6 entry lookups?
+
+[source]
+----
+$ dig @ns1.google.com keep.google.com AAAA +short
+www3.l.google.com.
+2607:f8b0:400a:803::1000
+
+$ dig www.facebook.com AAAA +short
+star.c10r.facebook.com.
+2a03:2880:2110:9f07:face:b00c:0:1
+----
+
+Using `+search`:
+
+[source]
+----
+$ dig mysvc-data3 +search +short
+10.10.1.11
+----
+
+It will use the search list in your `/etc/resolv.conf` file.
+
+Want to do bulk (scripted) lookups of hostnames? `dig` is perfect then:
+
+[source]
+----
+$ dig -f internal.hosts.txt +short +identify +search
+10.10.7.8 from server 10.10.4.61 in 0 ms.
+10.10.7.9 from server 10.10.4.61 in 0 ms.
+10.10.7.10 from server 10.10.4.61 in 1 ms.
+----
+
+You can also trace your queries with `+trace`:
+
+[source]
+----
+$ dig +trace linkedin.com +noall
+
+; <<>> DiG 9.8.2rc1-RedHat-9.8.2-0.10.rc1.el6 <<>> +trace linkedin.com +answer +noall
+;; global options: +cmd
+;; Received 496 bytes from 10.160.4.61#53(10.160.4.61) in 112 ms
+
+;; Received 490 bytes from 128.63.2.53#53(128.63.2.53) in 154 ms
+
+;; Received 316 bytes from 192.26.92.30#53(192.26.92.30) in 90 ms
+
+;; Received 204 bytes from 156.154.65.23#53(156.154.65.23) in 10 ms
+----
+
+Perhaps better for [human] troubleshooting than scripting, but mightily useful
+when you need it.
+
+Sometimes you just want to know public servers for your domain, which `+nssearch`
+will provide for you:
+
+[source]
+----
+$ dig twitter.com +nssearch
+SOA ns1.p26.dynect.net. zone-admin.dyndns.com. 2007120335 3600 600 604800 60 from server 204.13.251.34 in 12 ms.
+SOA ns1.p26.dynect.net. zone-admin.dyndns.com. 2007120335 3600 600 604800 60 from server 204.13.250.34 in 13 ms.
+SOA ns1.p26.dynect.net. zone-admin.dyndns.com. 2007120335 3600 600 604800 60 from server 208.78.70.34 in 14 ms.
+SOA ns1.p26.dynect.net. zone-admin.dyndns.com. 2007120335 3600 600 604800 60 from server 208.78.71.34 in 15 ms.
+
+$ dig twitter.com +nssearch +noidentify
+SOA ns1.p26.dynect.net. zone-admin.dyndns.com. 2007120335 3600 600 604800 60
+SOA ns1.p26.dynect.net. zone-admin.dyndns.com. 2007120335 3600 600 604800 60
+SOA ns1.p26.dynect.net. zone-admin.dyndns.com. 2007120335 3600 600 604800 60
+SOA ns1.p26.dynect.net. zone-admin.dyndns.com. 2007120335 3600 600 604800 60
+----
