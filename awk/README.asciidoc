@@ -1,0 +1,250 @@
+== AWK
+
+Sooo you think this is an April fool's joke. Not at all. Sometimes the best
+tool really is AWK. Yep, get over it. Not everything needs to be a distributed
+dynamically scheduled Map/Reduce job in Java. Seriously, AWKward!
+
+However, very few people really know how to write maintainable and less buggy
+AWK scripts. This guide will offer a set of simple style, formatting, and
+structural suggestions (or conventions) to use in your AWK scripts to minimize
+the number of unmaintainable or unreadable AWK scripts your team has to refine
+and update when needed.
+
+It might even make writing, maintaining, and debugging these scripts even
+enjoyable. AWK me, maybe.
+
+=== Resources
+
+Here are some external resources on Awk language and tutorials:
+
+* link:http://www.staff.science.uu.nl/~oostr102/docs/nawk/nawk_toc.html[The AWK Manual @ Utrecht University]
+* link:http://www.grymoire.com/Unix/Awk.html[Awk Tutorial by Bruce Barnett]
+
+=== Varieties
+
+There are a handful of varieties of implementations of AWK. These are:
+
+* `awk` - the original AWK implementation. This has mostly disappeared from
+  most modern UNIX operating systems.
+* link:https://www.gnu.org/software/gawk/[`gawk`] - stands for GNU Awk. This variety is the default AWK on some
+  Linux distributions. This supports (in some fashion) i18n and C based
+  plugin system. This variety has historically implemented more features
+  than the other varieties of AWK.
+* `nawk` - a "new AWK" is AT&T's version of Awk. Default on OSX and *BSD.
+* link:http://invisible-island.net/mawk/[`mawk`] - stands for _Mike Brennans's Awk_ and is the system default on
+  Debian and Ubuntu distributions. Typically hailed as the fastest Awk
+  interpreter implementation, this is now maintained by Debian maintainers.
+
+Unless you are using GNU Awk (gawk) extensions or features of the primary
+Awk language not implementated by mawk or nawk, I personally default to using
+mawk but have found myself using gawk other times when the amount of data being
+processed is not large.
+
+Nobody should be using the very old original `awk` implementation at this
+point. Beyond that choose your Awk implementation wisely based on the features
+your scripts use and performance needs.
+
+Here are external resources discussing the differences between Awk language
+implementations:
+
+* link:http://www.well.ox.ac.uk/~johnb/comp/awk/awk.html[Awk Introduction @ ox.ac.uk]
+* link:http://www.vectorsite.net/tsawk_3.html[Awk Examples, Nawk, & Awk Quick Reference]
+* link:https://www.cs.duke.edu/csl/docs/unix_course/intro-77.html[7.2.3 awk, nawk, gawk]
+
+=== Structure
+
+AWK scripts should have a structure similar to the following script outline:
+
+[source,awk]
+----
+# Filter Apache HTTPd log entries based on HTTP code and method
+#
+# You can supply three input variables to the script:
+# * http_method in [GET, POST, OPTIONS, HEAD, PUT, DELETE] (default: POST)
+# * http_code in range 200..599 (default: 500)
+# * verbose if set to any value turns on verbose logging (default: unset)
+#
+# Expects input with Apache HTTPd log entries with HTTP code at position 9
+# and HTTP method at position 6.
+#
+# Examples:
+#
+#     $ awk -v http_code=500 \
+#         -v http_method=POST \
+#         -v verbose=1 \
+#         -f this_script.awk INPUT_FILE
+#
+#     $ awk -v http_code=200 \
+#         -v http_method=POST \
+#         -f this_script.awk INPUT_FILE
+#
+
+BEGIN {
+  # setup the special variable if they should deviate from the defaults
+  #FS = ",";   # Field Separator
+  RS = "\n";  # Record Separator (lines)
+  OFS = " ";  # Output Field Separator
+  ORS = "\n"; # Output Record Separator (lines)
+
+  # set defaults here if input variables are not set
+  if (http_code == "") { http_code = "500"; }
+  if (http_method == "") { http_method = "POST"; }
+  if (counter == "") { counter = 0; }
+  if (verbose != "") {
+    print "Using values:";
+    print " * http_code =", http_code;
+    print " * http_method =", http_method;
+    print " * counter =", counter;
+    print " * ARGC =", ARGC;
+  }
+  print "=== HTTP Logs ==="
+}
+END {
+  # Output summary information
+  print "=== Matched:", counter, "===";
+}
+
+# your functions underneath right here
+function displayLogEntry(logentry) {
+  print ">>>", logentry;
+}
+
+# your expressions below
+$6 == http_method && $9 == http_code {
+  displayLogEntry($0);
+  counter = counter + 1;
+}
+----
+
+The above example provides a layout that will aid in debugging and
+readability amongst multiple team members.
+
+Let's dive in to inspect.
+
+==== Documentation
+
+Your AWK script _should_:
+
+* have a one line comment at the very top (after shebag if that is necessary)
+  to describe on high level the purpose and objective of your script.
+* if further explanation is necessary separate that comment block by an
+  empty comment line (`#`).
+* your optional explanation block should describe the purpose, bounds, and
+  defaults of expected input variables to the script.
+* your optional explanation block should also describe how to invoke from
+  the command-line your AWK script.
+* your optional explanation block and mandatory high level purpose description
+  comments should all fit within 80 characters each line.
+
+==== Naming
+
+Script variables (e.g. `http_method` and `http_code` in the above example)
+_should_:
+
+* be named snake case (fork this repo if you disagree to mutate this for your
+  team, they key is merely consistency). The reason I prefer snake case for
+  local script variables is to differentiate them from AWK level variables
+  such as `FS`, `RS`, `OFS`, `ORS`, `NF`, `NR`, `ARGV`, `ARGC`.
+* be named descriptively, e.g. `http_method` is better than `hm`, or `meth`.
+
+Script functions _should_:
+
+* use `firstLowerCamelCase` convention for naming functions to distinguish
+  from both AWK variables and script level variables (which are `snake_case`).
+* be named descriptively, e.g. `displayLogEntry` should be preferred over `p`.
+* arguments to functions should be named using the script variable naming
+  convention (`snake_case`)
+
+==== Indentation
+
+It doesn't matter you choose here just be consistent across all your AWK
+scripts. I use 2 space soft tab indentation. Sue me.
+
+==== Defaults
+
+In the `BEGIN` block defaults should be set for unset input variables:
+
+* you _should_ check if the value of a variable is empty string ("") and if so
+  set a reasonable default value for the variable. If no reasonable default
+  value can be set, the script should exit with a descriptive error message.
+* you _must_ have a verbose flag which is off by default. Set to anything
+  other than an empty string it should turn on verbose logging inside your
+  script.
+
+==== Sections
+
+This is arbitrary but I prefer to split up AWK scripts into four primary
+sections:
+
+* Script documentation (see <<documentation>> above)
+* `BEGIN`/`END` blocks
+* Script functions
+* Script expressions
+
+In the above order. The order doesn't matter as much as consistency.
+
+=== Debugging
+
+With gawk comes a debugger which is in the same vein as most language
+debuggers with typical features such as breakpoint setting/unsetting,
+stepping in/over/out, and trace printing while paused at a breakpoint.
+
+You can invoke it via: `awk -DFILE`.
+
+=== Examples
+
+Inside the `awk` directory we have a sample AWK script and HTTP sample log
+file.
+
+Filter for 404s using GET HTTP method with verbose mode on.
+
+[source]
+----
+$ awk -v http_code=404 -v verbose=1 -v http_method=GET -f http_logs.awk http.log
+Using values:
+ * http_code = 404
+ * http_method = GET
+ * counter = 0
+ * ARGC = 2
+=== HTTP Logs ===
+>>> 127.0.0.1 - - [28/Jul/2006:10:27:32 -0300] GET /hidden/ HTTP/1.0 404 7218 "-" "Mozilla/5.0"
+>>> 1.202.218.8 - - [20/Jun/2012:19:05:12 +0200] GET /robots.txt HTTP/1.0 404 492 "-" "Mozilla/5.0"
+=== Matched: 2 ===
+----
+
+Filter for 500s using POST HTTP method with verbose mode turned on.
+
+[source]
+----
+$ awk -v http_code=500 -v verbose=1 -v http_method=POST -f http_logs.awk http.log
+Using values:
+ * http_code = 500
+ * http_method = POST
+ * counter = 0
+ * ARGC = 2
+=== HTTP Logs ===
+>>> 192.168.2.21 - - [28/Jul/2007:10:22:04 -0300] POST /wtf HTTP/1.0 500 116 "-" "Mozilla/5.0"
+=== Matched: 1 ===
+----
+
+Filter for 200s using GET HTTP method without verbose mode turned on.
+
+[source]
+----
+$ awk -v http_method=GET -v http_code=200 -f http_logs.awk http.log
+=== HTTP Logs ===
+>>> 66.249.65.107 - - [08/Oct/2007:04:54:20 -0400] GET /support.html HTTP/1.1 200 11179 "-" "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+>>> 111.111.111.111 - - [08/Oct/2007:11:17:55 -0400] GET / HTTP/1.1 200 10801 "http://www.google.com/search?q=log+analyzer&ie=utf-8&oe=utf-8 &aq=t&rls=org.mozilla:en-US:official&client=firefox-a" "Mozilla/5.0 (Windows; U; Windows NT 5.2; en-US; rv:1.8.1.7) Gecko/20070914 Firefox/2.0.0.7"
+>>> 111.111.111.111 - - [08/Oct/2007:11:17:55 -0400] GET /style.css HTTP/1.1 200 3225 "http://www.loganalyzer.net/" "Mozilla/5.0 (Windows; U; Windows NT 5.2; en-US; rv:1.8.1.7) Gecko/20070914 Firefox/2.0.0.7"
+>>> 192.168.2.20 - - [28/Jul/2006:10:27:10 -0300] GET /cgi-bin/try/ HTTP/1.0 200 3395 "-" "Mozilla/5.0"
+>>> 127.0.0.1 - - [28/Jul/2006:10:22:04 -0300] GET / HTTP/1.0 200 2216 "-" "Mozilla/5.0"
+>>> 208.115.113.91 - - [20/Jun/2012:19:20:16 +0200] GET /logs/?C=M;O=D HTTP/1.1 200 1278 "-" "Mozilla/5.0 (compatible; Ezooms/1.0; ezooms.bot@gmail.com)"
+>>> 123.125.71.20 - - [20/Jun/2012:19:30:40 +0200] GET / HTTP/1.1 200 912 "-" "Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)"
+>>> 220.181.108.101 - - [20/Jun/2012:19:31:01 +0200] GET / HTTP/1.1 200 912 "-" "Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)"
+>>> 123.125.68.79 - - [20/Jun/2012:19:53:24 +0200] GET / HTTP/1.1 200 625 "-" "Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)"
+>>> 178.154.210.252 - - [20/Jun/2012:19:54:10 +0200] GET /?C=S;O=A HTTP/1.1 200 663 "-" "Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)"
+>>> 74.125.126.102 - - [20/Jun/2012:20:15:28 +0200] GET / HTTP/1.1 200 606 "http://www.google.com/url?sa=t&rct=j&q=error&source=web&cd=1&ved=0CFAQFjAG&url=http%3A%2F%2Fwww.isrolab.com%2F&ei=GxPiT5PsL4e04AHPtgE&usg=AFQjCNHnmjmdkUV584ORIpOXz7zAPX0UHQ" "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.648; .NET CLR 3.5.21022; InfoPath.2; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)"
+>>> 74.125.126.103 - - [20/Jun/2012:20:15:29 +0200] GET /icons/blank.gif HTTP/1.1 200 383 "http://www.isrolab.com/" "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.648; .NET CLR 3.5.21022; InfoPath.2; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)"
+>>> 74.125.126.93 - - [20/Jun/2012:20:15:29 +0200] GET /icons/folder.gif HTTP/1.1 200 460 "http://www.isrolab.com/" "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.648; .NET CLR 3.5.21022; InfoPath.2; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)"
+=== Matched: 13 ===
+----
