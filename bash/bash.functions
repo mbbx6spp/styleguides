@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# Purpose: provide a library of reusable bash related functions
+
+function z_bash_test_script() {
+  # Here we are checking we have one argument otherwise we display function
+  # "signature" to stderr and return 1. Note: we return instead of exit as
+  # the outer context calling this function may set +e or -e depending on
+  # its needs. Don't assume your function should halt the whole script unless
+  # very exceptional scenarios are detected.
+  if [ "$#" -ne 1 ]; then
+    >&2 echo "Error: Expected one argument for ${FUNCNAME}"
+    >&2 echo "Usage: ${FUNCNAME} SCRIPTPATH"
+    return 1
+  fi
+  local -r path="${1}"
+
+  echo ">> Testing ${path} is executable"
+  test -x "${path}"
+  echo ">> Testing ${path} has valid Bash syntax"
+  bash -n "${path}"
+}
+
+function z_bash_check_scripts() {
+  # Again checking the number of arguments passed in is equal to the number
+  # expected and if not, will report to stderr the usage to aid debugging.
+  # Note: the use of ${FUNCNAME} to display the name of the function. This
+  # can help debug scripts much quicker than not putting this in your usage
+  # error reporting (based on my experiences). :)
+  if [ "$#" -ne 2 ]; then
+    >&2 echo "Error: Expected two arguments for ${FUNCNAME}"
+    >&2 echo "Usage: ${FUNCNAME} FILELISTPATH ROOTPATH"
+    return 1
+  fi
+  # We are also doing some precondition checking. Here we are checking that
+  # that a file should exist and if not reporting that to stderr.
+  if [ ! -f "${1}" ]; then
+    >&2 echo "Error: Given argument ${1} for path to list of files to check does"
+    >&2 echo "       not exist."
+    return 1
+  fi
+
+  # Another precondition, this time for a directory.
+  if [ ! -d "${2}" ]; then
+    >&2 echo "Error: Given argument ${2} for root path does not exist or isn't"
+    >&2 echo "       a directory with expected permissions."
+    return 1
+  fi
+
+  local -ra scripts=($(cat "${1}"))
+  local -r  root_dir="${2}"
+
+  for s in "${scripts[@]}"; do
+    z_bash_test_script "${root_dir}/${s}"
+  done
+}
+
+function z_bash_check_file_exists() {
+  if [ "$#" -ne 1 ]; then
+    >&2 echo "Error: Expected one argument for ${FUNCNAME}: PATH"
+    return 1
+  fi
+  local -r path="${1}"
+
+  echo ">> Testing file ${path} exists"
+  test -f "${path}"
+}
+
+function z_bash_check_required_files_exist() {
+  if [ "$#" -ne 2 ]; then
+    >&2 echo "Error: Expected two arguments for ${FUNCNAME}: FILELISTPATH ROOTPATH"
+    return 1
+  fi
+  if [ ! -f "${1}" ]; then
+    >&2 echo "Error: Given argument ${1} for path to list of files to check does"
+    >&2 echo "       not exist."
+    return 1
+  fi
+  if [ ! -d "${2}" ]; then
+    >&2 echo "Error: Given argument ${2} for root path does not exist or isn't"
+    >&2 echo "       a directory with expected permissions."
+    return 1
+  fi
+
+  local -ra scripts=($(cat "${1}"))
+  local -r  root_dir="${2}"
+
+  for s in "${scripts[@]}"; do
+    z_bash_check_file_exists "${root_dir}/${s}"
+  done
+}
+
+if [ "${BASH_SOURCE[0]}" != "$0" ]; then
+  export -f z_bash_test_script
+  export -f z_bash_check_scripts
+else
+  # I want to make sure we report to stderr that a library script that expects
+  # to be sourced by another script is being executed, not just sourced. Can
+  # also aid in debugging issues with your script.
+  >&2 echo "Error: executing ${0} intended to be sourced...nothing to do."
+  exit 1
+fi
