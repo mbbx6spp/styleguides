@@ -1,0 +1,22 @@
+=== Architecture: ${SERVICE_NAME}
+
+This top level section should provide the basic high level explanation of what
+the service (or set of collaborating services) does and what business value
+to your product or business' service it provides.
+
+A nice touch would be something like _'this analytics service is sold as an
+addon to our flagship product X and in FY2014 generated $Y in sales mostly
+from customers of size Z.'_
+
+Maybe detail out the profile of customer and/or user if they are different
+(often they are in the enterprise or healthcare product offerings for example).
+
+The trick is to keep this updated as your team finds out about sales updates.
+
+Describing software and/or systems architecture is as much business or market
+understanding as it should be technical. It helps align the business with
+technical endeavors and it allows the technical team to become more invested
+in the business success of the service by understanding the customer and users
+better.
+
+TODO: flesh out the rest of this
