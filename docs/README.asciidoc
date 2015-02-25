@@ -1,0 +1,49 @@
+== Documentation
+
+This document describes the uses, purposes, and workflows of producing
+meaningful technical documentation that doesn't go stale and provides
+the whole team and even people external to the team value.
+
+=== Goals and Philosophy
+
+These document templates are intended to help serve two purposes:
+
+* Provide a way to share context among team members of one team or
+  across teams
+* Aid the thought process of the experimenters. In particular, set
+  the understanding and expectation that rejecting a hypothesis based
+  on results from an experiment is only bad if nothing is learned from
+  the resulting analysis.
+
+=== Document Types
+
+The following are types of documents that, when structured well but
+without too much arduous restriction on prose (just meaning and clarity
+of communication), offer engineering teams value from shared knowledge,
+understanding, and vision:
+
+* link:EXPERIMENT.asciidoc[] - this document offers a template to define
+  an experiment, which could be a new feature, a refactoring of existing
+  functionality, investigation into on-going and unresolved system failures,
+  performance tuning, and other activities that require more scope and
+  definition than the typical Jira ticket from a technical perspective.
+* ARCHITECTURE.asciidoc (coming soon) - this document offers a template to
+  communicate the architecture of a service or set of collaborating
+  services.
+* RUNBOOK.asciidoc (coming soon) - this document is a template for writing
+  runbooks of a specific service or peice of infrastructure.
+
+=== Living Documentation
+
+Make your documentation _living_. Allow engineers to submit reviews to
+their documentation changes the same way they submit code reviews. Lower
+the barrier to entry by providing basic templates in a low fuss ASCII
+markup language like Markdown, Asciidoc (my preferred), Textile, etc.
+
+Publishing from these documents is just a little bit of script automation
+but allowing developers to still using their favorite editor to write
+documentation and submit for review in the same way *EVEN IN THE SAME CODE
+REPOSITORY* as they submit code for review will allow your documentation
+to _live_ organically in the team.
+
+

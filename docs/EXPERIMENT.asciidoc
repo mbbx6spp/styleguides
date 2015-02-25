@@ -1,0 +1,72 @@
+== Title:
+
+=== Problem Statement
+
+* What question(s) are you trying to answer? Limit the scope where possible.
+* Include background information, observations, and evidence surrounding the
+  problem space.
+
+=== Definitions:
+
+* Define terms that will be used in this document for better clarity.
+
+=== Hypothesis
+
+* State a possible solution for the problem at hand.
+* Describe what criteria supports or nullifies your hypothesis.
+
+=== Assumptions:
+
+* List all simplifying assumptions for the sake of making the experiment
+  feasible.
+
+=== Theory
+
+* Outline, reference, and/or describe any theory or background knowledge
+  needed to conduct the experiment and/or analyze results in a meaningful way.
+
+=== Related Work
+
+* Reference related works to this experiment and explain how and why this
+  experiment is still useful given these works/projects/experiments are
+  already in progress or completed.
+
+=== Tools:
+
+* List all tools used for investigation.
+* Provide advantages and disadvantages of each tool w.r.t. measurement precision,
+  accuracy, and any caveats.
+
+=== Procedure:
+
+* Write a numbered list of steps or (better) provide a well commented script
+  that describes or runs the process used to extract data used to validate or
+  invalidate the hypothesis.
+* Ensure this is reproducible and all dependencies are documented or scripted.
+* Describe pros and cons of the procedure described and given the constraints
+  (time, material, money, etc.) on the investigation.
+
+=== Results (Data):
+
+* This section includes data tables, graphs, or other visualizations of the raw
+  data to show what was measured as part of the experiment/investigation.
+
+=== Limitations:
+
+* Discuss possible errors that could have occurred in the collection of the
+  data (experimental errors)
+* Describe any limitations of the procedure, tools, and what the raw data
+  can tell us. How does that limit the scope of the conclusions?
+
+=== Conclusions:
+
+* State clearly if the results validate or invalidate your original hypothesis.
+* Explain using the data, both raw and derived measures from the raw data, why
+  that conclusion was arrived at.
+* Display any derived measurements from the raw data that assist in explaining
+  the determination of accepting or rejecting the hypothesis.
+
+=== Future Work:
+
+* What actions will be taken based on this experiment with a timeline plus who
+  has responsibility of following through on these actions.
