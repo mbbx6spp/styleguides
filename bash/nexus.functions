@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Purpose: Provide reusable functions to offer nexus package deployment
+# functionality
+
+# Note how this library file is free from interdependence on any variables
+# or other functions being defined already. This helps with its potential
+# reusability.
+function z_nexus_deploy_package() {
+  if [ "$#" -ne 6 ]; then
+    >&2 echo "Error: Expected six arguments to ${FUNCNAME}:"
+    >&2 echo "  ${FUNCNAME} VER URL REPO ARTIFACTID GROUPID ARTIFACT"
+    return 1
+  fi
+  local -r version="${1}"
+  local -r repoUrl="${2}"
+  local -r repoId="${3}"
+  local -r artifactId="${4}"
+  local -r groupId="${5}"
+  local -r artifact="${6}"
+
+  mvn deploy:deploy-file \
+    -Durl="${repoUrl}" \
+    -DrepositoryId="${repoId}" \
+    -Dfile="${artifact}" \
+    -DgroupId="${groupId}" \
+    -DartifactId="${artifactId}" \
+    -Dversion="${version}" \
+    -Dpackaging=tar.gz \
+    -DgeneratePom=true
+}
+
+if [ "${BASH_SOURCE[0]}" != "$0" ]; then
+  export -f z_nexus_deploy_package
+else
+  >&2 echo "Error: executing ${0} intended to be sourced...nothing to do."
+  exit 1
+fi

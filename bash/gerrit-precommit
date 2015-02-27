@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Purpose: Provide an example Gerrit precommit (upon new review or subsequent
+# patchset push) CI hook. Assumes it runs with Jenkins driving it (note:
+# check on JENKINS_HOME to know where it is running).
+
+function usage() {
+  echo "Usage: $0 [REMOTE [BRANCH]]"
+  echo
+  echo "  where REMOTE [optional] has default value of gerrit"
+  echo "    and BRANCH [optional] has default value of master"
+}
+
+function main() {
+  if [ "$#" -ne 2 ]; then
+    >&2 echo "Error: Expected 2 arguments to ${FUNCNAME} - REMOTE BRANCH"
+    return 1
+  fi
+  echo "Using root directory: ${z_root_dir}"
+  # check bash scripts specified in ${z_root_dir}/bash.scripts:
+  # * exist
+  # * are executable
+  # * have valid bash syntax
+  z_bash_check_scripts "${z_root_dir}/bash.scripts" "${z_root_dir}"
+  z_bash_check_required_files_exist "${z_root_dir}/required.files" "${z_root_dir}"
+  local -r svc_props_path="${z_root_dir}/service.properties"
+  if [ -f "${svc_props_path}" ]; then
+    local -r svc_props_changes="$(z_git_changed_files "src" "AM" "${1}" "${2}" | \
+      grep "^${svc_props_path}$")"
+    local -r version="3.4.6"
+    local -r repo_id=thirdparty
+    local -r repo_url="http://nexus.yourorg.tld/content/repositories/${repo_id}"
+    local -r artifact_id=zookeeper
+    local -r group_id=org.apache.zookeeper
+    local -r group_path="$(echo "${group_id}" | sed 's/\./\//g')"
+    local -r pom_url="${repo_url}/${group_path}/${artifact_id}/${version}/${artifact_id}-${version}.pom"
+
+    # Checks if there were changes in the current review for file
+    # ${svc_props_changes} and then checks if the nexus POM for expected
+    # artifact already exists (this could be the Nth patchset for a review
+    # where thirdparty artifact was already uploaded to Nexus in previous
+    # patchset already so no need to re-upload each time).
+    if [ ! -z "${svc_props_changes}" ] && (! curl -sI "${pom_url}"); then
+      local -r dist_file="$(bash -x "${z_ci_dir}/precommit-verify-apache-artifact" | tail -1)"
+      echo ">>>> ${dist_file}"
+
+      z_nexus_deploy_package \
+        "${version}" \
+        "${repo_url}" \
+        "${repo_id}" \
+        "${artifact_id}" \
+        "${group_id}" \
+        "${dist_file}"
+    fi
+  else
+    >&2 echo "Error: ${svc_props_path} does not exist"
+    exit 1
+  fi
+  echo "OK"
+}
+
+if [ "${BASH_SOURCE[0]}" != "$0" -a -z "${JENKINS_HOME}" ]; then
+  echo "Sourcing an executable script...nothing to do."
+else
+  if [ ! -z "${GERRIT_REMOTE}" ]; then
+    declare -r z_remote="${GERRIT_REMOTE}"
+  else
+    declare -r z_remote="${1:-origin}"
+  fi
+
+  if [ ! -z "${GERRIT_BRANCH}" ]; then
+    declare -r z_branch="${GERRIT_BRANCH}"
+  else
+    declare -r z_branch="${2:-master}"
+  fi
+
+  if [ -z "${JENKINS_HOME}" ]; then
+    declare -r z_ci_dir="$(cd "$(dirname "$0")"; pwd)"
+  else
+    declare -r z_ci_dir="${WORKSPACE}"
+  fi
+  # In this case root and ci directories are the same.
+  declare -r z_root_dir="${z_ci_dir}"
+
+  source "${z_ci_dir}/git.functions"
+  source "${z_ci_dir}/bash.functions"
+  source "${z_ci_dir}/nexus.functions"
+
+  set -eu
+  main "${z_remote}" "${z_branch}"
+  exit 0
+fi

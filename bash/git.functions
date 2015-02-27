@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Purpose: provide reusable git related functions for shell scripts
+
+function z_git_changed_files() {
+  if [ "$#" -lt 1 ]; then
+    echo "Error: ${FUNCNAME} expects at least one argument."
+    echo "Usage: ${FUNCNAME} SUBDIR [FILTER [REMOTE [BRANCH]]]"
+    echo "where SUBDIR is subdirectory relative to the repository's root"
+    echo "  and FILTER is a git filter, e.g. \"A\" for added files, \"D\" for deleted"
+  fi
+  local -r subdir="$1"
+  local -r filter="${2:-AM}"
+  local -r remote="${3:-origin}"
+  local -r branch="${4:-master}"
+
+  git fetch -q "${remote}" "${branch}"
+  git reset -q --soft
+  git diff-index --diff-filter="${filter}" --name-only --cached "${remote}/${branch}" -- "${subdir}"
+}
+
+function z_git_removed_files() {
+  z_git_changed_files "${1:-.}" "D" "${2:-origin}" "${3:-master}"
+}
+
+function z_git_added_files() {
+  z_git_changed_files "${1:-.}" "A" "${2:-origin}" "${3:-master}"
+}
+
+function z_git_modified_files() {
+  z_git_changed_files "${1:-.}" "M" "${2:-origin}" "${3:-master}"
+}
+
+function z_git_renamed_files() {
+  z_git_changed_files "${1:-.}" "R" "${2:-origin}" "${3:-master}"
+}
+
+function z_git_clean_clone_workspace() {
+  git clean --force -d -x
+}
+
+if [ "${BASH_SOURCE[0]}" != "$0" ]; then
+  export -f z_git_changed_files
+  export -f z_git_removed_files
+  export -f z_git_added_files
+  export -f z_git_modified_files
+  export -f z_git_renamed_files
+  export -f z_git_clean_clone_workspace
+else
+  >&2 echo "Error: executing ${0} intended to be sourced...nothing to do."
+  exit 1
+fi
