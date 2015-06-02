@@ -27,6 +27,9 @@ understanding, and vision:
   functionality, investigation into on-going and unresolved system failures,
   performance tuning, and other activities that require more scope and
   definition than the typical Jira ticket from a technical perspective.
+* link:PROJECT.asciidoc[] - this document offers a template to define
+  a project. This should cover large initiatives that need resource scoping,
+  business alignment, and long term success measurement.
 * ARCHITECTURE.asciidoc (coming soon) - this document offers a template to
   communicate the architecture of a service or set of collaborating
   services.
