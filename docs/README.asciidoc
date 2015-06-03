@@ -27,8 +27,13 @@ understanding, and vision:
   functionality, investigation into on-going and unresolved system failures,
   performance tuning, and other activities that require more scope and
   definition than the typical Jira ticket from a technical perspective.
-* link:REQUIREMENT.asciidoc[] - this document offers a template for aiding
+* link:REQUIREMENTS.asciidoc[] - this document offers a template for aiding
   requirements gathering.
+* link:PROJECT.asciidoc[] - this document uses the link:EXPERIMENT.asciidoc[]
+  template for projects. This should be used when you need to gather
+  requirements from stakeholders, the resource spend to undertake the
+  initiative is significant, or it requires long term utilization of
+  resources.
 * ARCHITECTURE.asciidoc (coming soon) - this document offers a template to
   communicate the architecture of a service or set of collaborating
   services.
