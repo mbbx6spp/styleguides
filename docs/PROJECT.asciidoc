@@ -1,0 +1,73 @@
+The goal of this document is to provide a list of items required when
+working on scoping a project. It uses the same steps laid out in the
+link:EXPERIMENT.asciidoc[experiment] doc but the wording is aimed at improving project scoping
+and success criteria.
+
+== Title:
+
+=== Project Description
+
+* What benefit is this project hoping to provide?
+* What evidence supports why there may be a problem and why we need to
+  solve it?
+* What business impact does this have?
+
+=== Suggested Improvement (Project Plan)
+
+* State a possible solution for the problem at hand.
+* Identify success criteria
+* Refer to documentation that supports this method
+
+=== Definitions:
+
+* Define terms that will be used in this document for better clarity.
+
+=== Assumptions:
+
+* List all simplifying assumptions for the sake of making the experiment
+  feasible.
+
+=== Tools:
+
+* List all tools used for investigation.
+* Provide advantages and disadvantages of each tool w.r.t. measurement precision,
+  accuracy, and any caveats.
+
+=== Work Required:
+
+* What work is required to implement this? Detail a plan of action and how
+  you arrived at these steps (supporting evidence)
+* What is the resource requirement for these steps?
+* Describe pros and cons of the procedure described and given the constraints
+  (time, material, money, etc.) on the investigation.
+
+=== Results (Data):
+
+* Report on success criteria
+* Show how this was collected so that it can be collected again in the future
+
+=== Limitations:
+
+* Discuss possible errors that could have occurred in the collection of the
+  data (experimental errors)
+* Describe any limitations of the procedure, tools, and what the raw data
+  can tell us. How does that limit the scope of the conclusions?
+
+=== Conclusions:
+
+* State clearly if the results validate or invalidate your original hypothesis.
+* Explain using the data, both raw and derived measures from the raw data, why
+  that conclusion was arrived at.
+* Display any derived measurements from the raw data that assist in explaining
+  the determination of accepting or rejecting the hypothesis.
+* Evaluate any areas where improvements could be made. Identify key areas where
+  things either didn't go as expected. This is not meant as a place for finding
+  fault but is meant as a way to improve the team and the organization.
+* A project can fail and still be a success for the business, but only if the
+  items that caused it to fail are identified and future work is scheduled to
+  improve/rectify them.
+
+=== Future Work:
+
+* What actions will be taken based on this experiment with a timeline plus who
+  has responsibility of following through on these actions.
