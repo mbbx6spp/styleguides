@@ -1,6 +1,6 @@
 == Title:
 
-=== Problem Statement
+=== Problem Statement:
 
 * What question(s) are you trying to answer? Limit the scope where possible.
 * Include background information, observations, and evidence surrounding the
@@ -10,7 +10,7 @@
 
 * Define terms that will be used in this document for better clarity.
 
-=== Hypothesis
+=== Hypothesis:
 
 * State a possible solution for the problem at hand.
 * Describe what criteria supports or nullifies your hypothesis.
@@ -20,7 +20,7 @@
 * List all simplifying assumptions for the sake of making the experiment
   feasible.
 
-=== Theory
+=== Theory:
 
 * Outline, reference, and/or describe any theory or background knowledge
   needed to conduct the experiment and/or analyze results in a meaningful way.
