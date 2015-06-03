@@ -27,6 +27,8 @@ understanding, and vision:
   functionality, investigation into on-going and unresolved system failures,
   performance tuning, and other activities that require more scope and
   definition than the typical Jira ticket from a technical perspective.
+* link:REQUIREMENT.asciidoc[] - this document offers a template for aiding
+  requirements gathering.
 * ARCHITECTURE.asciidoc (coming soon) - this document offers a template to
   communicate the architecture of a service or set of collaborating
   services.
