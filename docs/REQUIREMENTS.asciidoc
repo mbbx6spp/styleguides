@@ -1,0 +1,48 @@
+## Requirements for ${PROJECT_NAME}
+
+### Stakeholders &amp; Actors
+
+In this section you should:
+
+* identify the stakeholders for the success of the project (this is not
+  necessarily the same as the actors that interact with the solution)
+* identify the actors of the system to be developed, deployed, and/or
+  provisioned.
+* for each actor describe who or what they are plus how and why they interact
+  with the system briefly.
+* also describe expected SLAs for each actor
+
+### Assumptions
+
+List any assumptions you make when listing the requirements and/or identifying
+stakeholders and/or actors.
+
+### Requirements: Mandatory
+
+In this section you should provide a list of requirements the chosen solution
+must satisfy. Make this as minimum and simple as possible to ensure business
+success.
+
+Each requirement should contain a brief but tangible business rationale for
+being mandatory. For example, when choosing a secret store we might make it
+mandatory to expect the secret store to do auto expiration of tokens/keys
+that are generated via its APIs to avoid every application writing custom
+logic to expire the tokens/keys themselves which introduces a much higher
+likelihood of bugs and/or lack of consistency in how these tokens/keys are
+handled across the organization. From an Info Sec perspective this would be
+highly undesirable and may impact the security of the company's customers and
+protecting customer trust is critical to business success.
+
+### Requirements: Optional
+
+Describe any optional features that would be desirable in the solution.
+
+A brief business justification on why these may be desirable from a
+stakeholder and/or user's perspective should be provided.
+
+### Next Steps
+
+List any implications or actionable items that need to be addressed related to
+this project to move forward.
+
+Now get all stakeholders to agree on the requirements. :)
