@@ -1,0 +1,86 @@
+== Title:
+
+=== Project Definition:
+
+* What is the intended benefit of this project for the business?
+* For each phase of the project what are the success criteria and how are they evaluated?
+
+=== Definitions:
+
+* Define terms that will be used in this document for better clarity. i.e.
+* Customer::
+     Corporate IT of an enterprise with 1,000-10,000 employees
+* CAP::
+      Theorem defining consistency, availability, and partition tolerance. link:http://en.wikipedia.org/wiki/CAP_theorem[See more.]
+
+=== Business Impact:
+
+Consider the answer to the following questions and ensure management buy-in as part of this section.
+
+* How will this benefit the business?
+* How does this align with business objectives? (link:http://en.wikipedia.org/wiki/OKR[OKRs] should be used here)
+* Identify risk assessment criteria and outcome.
+
+=== Assumptions:
+
+* List all simplifying assumptions for the sake of making the experiment
+  feasible.
+
+=== Inputs:
+
+* Use the link:REQUIREMENTS.asciidoc[] template to collect input about
+  features, users, and stakeholders.
+
+=== Motivation/Cause:
+
+* What business logic led to this project's creation?
+* What logic led to this path?
+
+=== Related Work:
+
+* Identify similar initiatives the business has undertaken and how what was learned
+  there that may apply here.
+* Research other companies undertaking a similar project and include their
+  outcomes here. This should include alternative approaches (different
+  technologies, team organization, skills, etc).
+* Research other related documentation and cite here, including explanations of why
+  it is relevant.
+
+=== Implementation:
+
+* Identify key milestones for the project.
+* Scope work for each of these milestones.
+* Identify project dependencies between milestones.
+* Document key technical decisions.
+* Connect the success criteria to evaluate project success at each milestone.
+
+=== Business Intelligence Reporting:
+
+* Collect data around scope modifications.
+* Collect and present data around task timing and dependency identification
+  success or where improvements could be made.
+* Ensure easy consumption of this data through well labeled reports, clear data
+  points, line up justification with collected metrics, target the reports to the
+  audience receiving them, follow-up with stakeholders for feedback.
+* Link to long term measurements of business impact for the project (good/bad). i.e.
+  * Process and examples of reports for management
+  * New OKRs related to this project and its output
+
+=== Limitations:
+
+* Discuss resource restrictions that may have shaped the scope of the project
+* Identify gaps in tooling or skills that affected the decisions made here
+* Discuss possible errors that could have occurred in the collection of the
+  requirements
+
+=== Conclusions:
+
+* State clearly if the success criteria were met and why.
+* Collect information around things that could be improved on. The specific
+  task here is to help the team improve not to place blame.
+* Identify what may have been difficult or impossible to measure.
+
+=== Business Risks:
+
+* What other areas of improvement did this project provide visibility into?
+* What risks do those pose to the business and how critical are they?
