@@ -19,7 +19,12 @@ Consider the answer to the following questions and ensure management buy-in as p
 
 * How will this benefit the business?
 * How does this align with business objectives? (link:http://en.wikipedia.org/wiki/OKR[OKRs] should be used here)
+
+=== Business Risks:
+
 * Identify risk assessment criteria and outcome.
+* What other areas of improvement did this project provide visibility into?
+* What risks do those pose to the business and how critical are they?
 
 === Assumptions:
 
@@ -80,7 +85,3 @@ Consider the answer to the following questions and ensure management buy-in as p
   task here is to help the team improve not to place blame.
 * Identify what may have been difficult or impossible to measure.
 
-=== Business Risks:
-
-* What other areas of improvement did this project provide visibility into?
-* What risks do those pose to the business and how critical are they?
