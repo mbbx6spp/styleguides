@@ -22,35 +22,41 @@ without too much arduous restriction on prose (just meaning and clarity
 of communication), offer engineering teams value from shared knowledge,
 understanding, and vision:
 
-* link:EXPERIMENT.asciidoc[] - this document offers a template to define
+* link:EXPERIMENT.adoc[] - this document offers a template to define
   an experiment, which could be a new feature, a refactoring of existing
   functionality, investigation into on-going and unresolved system failures,
   performance tuning, and other activities that require more scope and
   definition than the typical Jira ticket from a technical perspective.
-* link:REQUIREMENTS.asciidoc[] - this document offers a template for aiding
+* link:REQUIREMENTS.adoc[] - this document offers a template for aiding
   requirements gathering.
-* link:PROJECT.asciidoc[] - this document uses the link:EXPERIMENT.asciidoc[]
+* link:PROJECT.adoc[] - this document uses the link:EXPERIMENT.adoc[]
   template for projects. This should be used when you need to gather
   requirements from stakeholders, the resource spend to undertake the
   initiative is significant, or it requires long term utilization of
   resources.
-* ARCHITECTURE.asciidoc (coming soon) - this document offers a template to
+* ARCHITECTURE.adoc (coming soon) - this document offers a template to
   communicate the architecture of a service or set of collaborating
   services.
-* RUNBOOK.asciidoc (coming soon) - this document is a template for writing
+* RUNBOOK.adoc (coming soon) - this document is a template for writing
   runbooks of a specific service or peice of infrastructure.
 
 === Living Documentation
 
-Make your documentation _living_. Allow engineers to submit reviews to
-their documentation changes the same way they submit code reviews. Lower
-the barrier to entry by providing basic templates in a low fuss ASCII
-markup language like Markdown, Asciidoc (my preferred), Textile, etc.
+Make your documentation _living_.  Lower the barrier to entry by providing
+basic templates in a low fuss ASCII markup language like Markdown,
+Asciidoc, Textile, etc. People can then use their favorite editor to
+make changes instead of spending time learning a new tool.
 
-Publishing from these documents is just a little bit of script automation
-but allowing developers to still using their favorite editor to write
-documentation and submit for review in the same way *EVEN IN THE SAME CODE
-REPOSITORY* as they submit code for review will allow your documentation
-to _live_ organically in the team.
+=== Reviews
 
+Use code reviews for documentation. This encourages feedback and is a
+familiar environment for engineers. It will make it easier to iterate,
+provide line-by-line feedback, and reduce the number of different
+processes involved in maintaining a project. Ideally a feature changeset
+can include both the implementation and required documentation together.
 
+=== Publishing
+
+Enabling access to these can require tooling. If you are already using an
+existing document store you should consider writing automation to publish
+into that.
