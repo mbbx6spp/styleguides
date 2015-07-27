@@ -33,7 +33,7 @@ Consider the answer to the following questions and ensure management buy-in as p
 
 === Inputs:
 
-* Use the link:REQUIREMENTS.asciidoc[] template to collect input about
+* Use the link:REQUIREMENTS.adoc[] template to collect input about
   features, users, and stakeholders.
 
 === Motivation/Cause:
