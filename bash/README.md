@@ -82,6 +82,8 @@ Appropriate uses for a Bash script are:
 ### Usage
 * All scripts must take a -h argument and return the usage. The usage should
   be in [BNF or EBNF](http://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_Form)
+* The shebang for your script should use `#!/usr/bin/env bash` not a hardcoded path to
+  `bash`.
 * The usage must include every option and argument the script will accept.
 * The script must include usable examples below the EBNF. This is really
   helpful when testing code reviews too.
