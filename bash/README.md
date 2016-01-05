@@ -82,6 +82,8 @@ Appropriate uses for a Bash script are:
 ### Usage
 * All scripts must take a -h argument and return the usage. The usage should
   be in [BNF or EBNF](http://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_Form)
+* The shebang for your script should use `#!/usr/bin/env bash` not a hardcoded path to
+  `bash`.
 * The usage must include every option and argument the script will accept.
 * The script must include usable examples below the EBNF. This is really
   helpful when testing code reviews too.
@@ -220,6 +222,7 @@ are run.
 * All error messages should go to `STDERR`.
 * All scripts should `set -e` to exit on error.
 * All scripts should `set -u` to help prevent unbound variables.
+* All scripts should `set -o pipefail` to catch previous errors in piped commands.
 * Doing trap catching to extend debugging output in the event of an error
   will in fact get you laid. This example shows how you would do that
   in a sourced library script:

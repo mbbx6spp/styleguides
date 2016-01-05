@@ -1,0 +1,41 @@
+== Jira Summary Goes Here (CCR-XXXX)
+
+=== Motivation
+
+* Describe here the reason why we're making the change
+* Reference any outages (YIKES) or other tickets that motivate making this change
+
+=== Background
+
+* Describe the software and/or systems being modified (versions if applicable)
+* (optional) Provide links to systems being modified
+* (optional) If this CCR presents some technical challenges, describe them and add references
+
+=== Testing
+
+* Describe how you know the change is successful post-modification
+
+=== Research
+
+* Has this been done before within Lookout? Reference the last ticket if available.
+* (optional) Has this been done by other companies?
+* Are there any applicable documents or links describing how to do this?
+* If there are other ways to do this, describe them and explain why this particular
+  implementation was chosen.
+
+=== Risks
+
+* If we choose not to do this CCR, what is the most likely thing that will happen?
+* If this CCR fails, what is the most likely failure scenarios?
+* Add any other reasonable failure scenarios that could happen
+* What is the backout/recovery strategy for each described failure scenario?
+
+=== Monitoring
+
+* If this change adds monitoring, describe what's being added here
+* If this change does not add monitoring, describe how we will track this over time
+
+=== Automation
+
+* If this CCR is being done manually, will it be automated?
+* If this CCR is done solely by automation, congratulations, you can delete this section

@@ -7,7 +7,7 @@ exception of the following overrides.
 
 ### Packages
 
-Fuck Java package naming conventions unless your Scala library is intended
+Forget Java package naming conventions unless your Scala library is intended
 for that audience. The verbosity of `{com,net,org,io,...}.` prefixes on
 package names is so ... 1990s. I'm over it. Like Ace of Base.
 

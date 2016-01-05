@@ -1,0 +1,49 @@
+== Dates Oncall:
+
+=== Summary/Notes:
+
+* Use this section to put high level context that may be helpful to the next person on-call
+
+Example:
+
+* There was a deploy of a significant number of changes to `service` on `date`. This has triggered
+  a number of escalations which have exposed a lack of monitoring visibility into one of the systems
+  that `service` depends on. This ticket `T-1234` tracks investigating more metrics and this ticket
+  `T-4321` covers investigation into how the `service` could be made more robust in the future.
+
+=== Continuing Incidents
+
+* Put issues that weren't fully resolved here, include a link and a risk summary
+
+=== Incidents
+
+* Each incident/ticket that is worked on by the on-call should go in this section. This should include
+  a high level summary of the issue, what corrective action (if any) was taken, and a link for further details.
+
+[cols="a,a,a,a,a"]
+|=================================================================================================
+| Summary | Action Taken | Incident Link(s) | Quality of Life Impact | Further Work
+| One sentence description of the problem
+| - Further Investigation Needed: Ticket Link
+- No Action Taken on-going maintenance, inside or outside window
+| Incident Link(s)
+| Awake or Asleep
+| - False Positive
+- Bad Escalation Path
+- Missing Documentation
+- Unclear Owner/Subject Matter Expert
+- Missing Diagnostics
+|=================================================================================================
+
+Example:
+|=================================================================================================
+| Summary | Action Taken | Incident Link(s) | Quality of Life Impact | Further Work
+| Riak Performance Problem | Action Taken Added More Metrics | OPS-1234 | None | Missing Diagnostics
+|=================================================================================================
+
+=== Definitions
+
+* `alert`: SMS/email/Phone call to a human to initiate corrective action.
+* `ticket`: tracking identifier usually from a system like Jira or Bugzilla.
+* `incident`: the crossing of a threshold that needs corrective action. This
+  can generate multiple tickets and alerts.
