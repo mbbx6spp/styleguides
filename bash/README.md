@@ -222,6 +222,7 @@ are run.
 * All error messages should go to `STDERR`.
 * All scripts should `set -e` to exit on error.
 * All scripts should `set -u` to help prevent unbound variables.
+* All scripts should `set -o pipefail` to catch previous errors in piped commands.
 * Doing trap catching to extend debugging output in the event of an error
   will in fact get you laid. This example shows how you would do that
   in a sourced library script:
