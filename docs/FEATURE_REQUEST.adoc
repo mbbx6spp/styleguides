@@ -1,0 +1,82 @@
+= Feature Request
+
+This document should be barebones and light, but containing links,
+references, and citation outside of this document to refer to evidence when
+needed for justification.
+
+This format is typical of BDD-style feature documentation and specification.
+See Dan North's link:https://dannorth.net/introducing-bdd/[Introducing BDD]
+article for starters.
+
+Provided is an offline example to suggest this is more universally applicable
+than just in software.
+
+== Template
+
+=== Business Analysis
+
+*Based on* _[links to supporting evidence: a whim, market/sentiment changes,
+events, competitors, suggestions, survey results, hard data, external
+studies, etc.]_
+
+*We believe that* _[business goal with requisite]_
+
+*We will know this is true* _[testable business outcome via metrics for
+initial evaluation]_
+
+*We will trigger re-evaluation of feature* _[testable business KPI metric
+with threshold including but not limited to on-going maintenance costs,
+customer acquisition costs, competitive analysis metrics, etc.]_
+
+=== Business Requirement
+
+*In order to* _[business goal]_
+
+*As an* _[business actor]_
+
+*I want* _[make requisite happen]_
+
+=== Implementation
+
+*As a* _[user type]_
+
+*I want* _[requisite]_
+
+*So that* _[business goal]_
+
+== Example
+
+=== Business Analysis
+
+*Based on* customer survey results from XYZ
+
+*We believe that* _more customers will purchase higher price point bottles of
+wine when a third party rating and review is placed next to the display
+bottle on the shelf.
+
+*We will know this is true* in select trial stores there is an uptick in
+sales of bottles with ratings and reviews placed next to the display bottle
+of test bottles compared to prior week sales and adjusting for sales offers
+impacting sales.
+
+*We will trigger re-evaluation of feature* when costs of printing, mounting,
+displaying, and/or setting up reviews next to display bottles outweights
+sales price point (approx $16/bottle) when ratings are 4.0 / 5.0 or above.
+
+=== Business Requirement
+
+*In order to* _increase wine sales_
+
+*As a(n)* _store staff_
+
+*I want* _to print, display, and mount reviews and ratings of higher price
+point wine bottles with good reviews to increase sales._
+
+=== Implementation
+
+*As a(n)* _store customer in the market for wine_
+
+*I want* _to read reviews and ratings of more expensive wines before I buy_
+
+*So that* _I can know whether it will satisfy my wine tastes without paying
+for it upfront._
