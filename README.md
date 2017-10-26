@@ -7,7 +7,7 @@ standards for the languages I care about.
 
 I am sick of putting this stuff up for a vote every new team I create or
 start up. It consumes less time if we just use a set of conventions and
-standards that we are already content with then iterate on those for our teams
+standards that we are already content with then iterate on those for our team's
 needs.
 
 ## Intent
