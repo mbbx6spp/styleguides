@@ -1,0 +1,40 @@
+= RCA: TITLE
+
+[width="80%",cols=">s,e"]
+|=====================================================
+| **Incident date**               |
+| **Public start time**           |
+| **Public end time**             |
+| **Duration (public impact)**    |
+| **Duration (internal impact)**  |
+| **Type of outage**              |
+|=====================================================
+
+
+== Symptoms/Impact
+
+Publicly to users:
+
+* List impacts or symptoms perceivable by users
+
+Internally/systems:
+
+* List impacts or symptoms that impacted technical staff
+
+If you have different types of users (e.g. anonymous user, regular user, administrator, etc.) then you should list the possible impacts to each of them if different functionality may have impacted them.
+
+== Timeline
+
+* Describe the timeline of events as they are understood.
+* Ensure that neutral wording is used. Remove specific references to people by name, but use role in the event to differentiate actors.
+* Remember the purpose is to find what processes or systems need fixing not assign blame to people or teams.
+
+== Takeaways
+
+* What could we do better?
+* What efforts should we prioritize as a result?
+* Is this likely to bite us in the ass again? How likely?
+
+== Next Steps
+
+* Link to artifacts (e.g. tickets/issues, etc) capturing the next steps.
