@@ -6,8 +6,8 @@ standards for the languages I care about.
 ## Purpose
 
 I am sick of putting this stuff up for a vote every new team I create or
-start up. It consumes less time if we just for a set of conventions and
-standards that I am already happy with and iterate on that for the teams
+start up. It consumes less time if we just use a set of conventions and
+standards that we are already content with then iterate on those for our teams
 needs.
 
 ## Intent
