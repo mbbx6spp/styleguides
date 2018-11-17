@@ -1,0 +1,32 @@
+=== Pattern Matching
+
+Scala has a builtin mechanism that allows us to on any sort of data
+construction in an ordered, first-match fashion. This is called
+pattern matching. What do I mean by this? We've already seen one
+example of this above so let's look at more examples:
+
+[source,scala]
+----
+include::holidays.scala[]
+----
+
+See link:holidays.scala[] for source.
+
+There were two examples above of pattern matching. One based on case value
+constructors and the other based on type discrimination of the value in an
+overly general case.
+
+A more simplistic example based on raw values that resembles switch/case
+statements in other languages is also possible like so:
+
+[source,scala]
+----
+include::dayofweek.scala[]
+----
+
+See link:dayofweek.scala[] for source.
+
+Above we convert from an `Int` value to a case object that we can use in our
+program logic.
+
+

@@ -1,0 +1,223 @@
+== Parametricity, Part 1
+
+The basic idea of parametricity is that from the parametric type signatures
+of _generically typed_ pure functions we can formulate *theorems* about the
+the way it behaves. And much more so than functions of specific types.
+
+=== Assumptions
+
+1. We assume pure functions only. This means a function can only be dependent
+  on its explicit inputs/arguments; nothing outside of its declaraction.
+  Thankfully all business logic can actually be implemented using pure
+  functions which even a compiler can verify (in my experience) if you write
+  in a decent programming language and don't have insane engineers on your
+  team. Obviously your mileage may vary (YMMV).
+2. The definition language supports parametric polymorphism. Parametric
+  polymorphism is when a function or a data type can be written generically
+  so that it can handle values identically without depending on their type.
+
+=== Motivations
+
+We want to be able to _reason_ about code. How it behaves, or, at least, how
+we can expect it to behave. This is because, as engineers, we hate not
+knowing the *state* of the world, or, more specifically, our programs. By
+understanding some basic guarantees of how we can expect a function to behave,
+we can build functionality on top of it with less surprises. What software
+engineer likes surprises, especially in production? Not me. At least not when
+I am on call. ;)
+
+=== Examples
+
+Let's look at some examples of what I mean by _theorems_ about functions from
+it's generic type signature.
+
+Below is a type signature of a function. Assuming it is a pure function and
+that `a` can be any type, what can the only behavior of this function be?
+
+[source,haskell]
+----
+f1 :: a -> a
+f1 a = ???
+----
+
+If it isn't obvious to you yet, then let's put a few different types for `a`
+and see:
+
+[source,haskell]
+----
+f1str :: String -> String
+f1str s = ???
+----
+
+Assuming the only thing the result of function `f1str` can depend on is the
+inputs (in this case just one input), then it could be any "transformation"
+of the input `s`. Now in this case the type is `String -> String`, there are
+many kinds of transformations that we can apply to the input to derive the
+result in a pure way. For example, we could apply a hash function on the
+input value to produce the result value. We could `reverse` the string or
+just take up to the first three characters of the input string and provide
+that as the resultant value. There are infinite (when you factor in all
+combinations of these transformations from `String -> String`) possibilities.
+
+However, let's try `Int -> Int`, there are not that many coinciding
+_transforms_ that are available for both `String` s and `Int` s. Now extending
+this to any type from input to output we realize there is only one possible
+definition, which is the identity function:
+
+[source,haskell]
+----
+identity :: a -> a
+identity a = a
+----
+
+Yes, ok, that example was trivial, but you see how when we made the types
+more and more generic we could make more and more assertions about the
+definition of the function?
+
+That's a critical piece of the idea behind parametricity.
+
+Cool, now let's take a look at a less trivial example.
+
+[source,haskell]
+----
+f2 :: (a -> b) -> [a] -> [b]
+f2 f as = ???
+----
+
+We are given a function from type `a` to type `b`. Let's say this is
+something like `String -> Int` where we take a string and give its length as
+the result value. So this means after taking that function, `len`, we would
+be taking a list of strings and returning a list of ints.
+
+So what can we say about this function, even the concrete one defined above?
+Well, the most likely definition of that is:
+
+[source,haskell]
+----
+f2 :: (String -> Int) -> [String] -> [Int]
+f2 f ss = map f ss
+----
+
+Well that just means that `f2` is `map`, right? The more generic we make the
+types the more sure we are that we can't have another definition for this.
+
+Let's continue by elaborating on how reasoning about code using parametricity
+might be a good thing. Perhaps even kind of powerful.
+
+Now look at the following:
+
+[source,haskell]
+----
+f3 :: (a -> b) -> Maybe a -> Maybe b
+f3 f ma = ???
+----
+
+First we need to understand (maybe?) what the Maybe type is about. Imagine
+you live in a world where `null`, `nil`, `None`, `NULL` or other such
+construct do not exist. It's a blissful land where if you are told there will
+be a value of type `PandaBear` somewhere, there will be an actual `PandaBear`
+value. Same for `GrizzlyBear`. No ifs, buts, or `null` s.
+
+Sometimes you really aren't sure if there will be a value of that type there.
+Sometimes it might be nothing or "blank". So we have to be able to tell the
+calling code that somehow. We do that with the type `Maybe a`.
+
+This is what the sum type definition of `Maybe a` looks like in Haskell:
+
+[source,haskell]
+----
+data Maybe a = Just a | Nothing
+----
+
+Now we need to look at how we would use this:
+
+[source,haskell]
+----
+sqrt :: Int -> Maybe Double
+sqrt i
+  | i > 0 = Just $ Math.sqrt i
+  | otherwise = Nothing
+
+-- We would use this like:
+--   sqrt 1   => Just 1
+--   sqrt 0   => Nothing
+--   sqrt -1  => Nothing
+--   sqrt 9   => Just 3
+
+defaulting :: a -> Maybe a -> a
+defaulting a1 (Just a2) = a2
+defaulting a1 Nothing = a1
+
+-- We would use the above like:
+--   g1 :: Maybe Int -> Int
+--   g1 = defaulting 6
+--   g1 $ Just 3   => 3
+--   g1 $ Nothing  => 6
+----
+
+There are two functions here using `Maybe a` of some kind. The `sqrt`
+function takes an `Int` value and if it is not zero of greater it will return
+a "nothing" value since our return type is a `Double` (rather than `Complex`).
+If we had made the type signature of `sqrt` to be `Int -> Double` and we know
+that no such value of `null`, `nil`, `None`, etc can exist for types then we
+can infer a logical error in the type signature exists and that the definition
+of `sqrt` is problematic due to it's ambiguity when given zero or less as
+input value. This is mightily helpful if your goal is to design better APIs.
+
+In the second function we have a `defaulting` function which takes a default
+value as a first argument and a "maybe" value of the same underlying type,
+`a` in this case, and in the case that the `Maybe a` value is "something" it
+will return that. Otherwise it returns the default.
+
+Hopefully you can see the value of the `Maybe a` type now. Let's get back to
+the original function we were going to investigate: `(a -> b) -> Maybe a ->
+Maybe b`. Again, assuming it is a pure function, what can we assert from the
+type signature?
+
+It seems obvious that if we can assume nothing about type `a` or `b` because
+they can be ANYTHING AT ALL, then there is only one definition of the
+function that can possibly exist. Let's see what this might look like with
+the definition expanded for `f3 :: (a -> b) -> Maybe a -> Maybe b`:
+
+[source,haskell]
+----
+-- Here we are using pattern matching which if you aren't used to Haskell, Erlang,
+-- Scala or other languages that have this might be alien to you. Basically we are
+-- "branching" the code path between the cases when a `Just x` value is provided
+-- versus when a `Nothing` value is provided as input. It yields (in my opinion)
+-- far more readable code than `if/else` branching.
+-- There is also the benefit that the compiler can warn you when you haven't covered
+-- all value constructors for a type you are matching on. :) I like types. Sue me.
+f3 :: (a -> b) -> Maybe a -> Maybe b
+f3 f (Just x) = Just $ f x
+f3 f Nothing  = Nothing
+----
+
+This reduces to the following definition using `fmap` from Haskell's Prelude
+(read: automatically imported standard libraries, it's a good approximation
+anyway).
+
+[source,haskell]
+----
+f3 :: (a -> b) -> Maybe a -> Maybe b
+f3 f ma = fmap f ma
+-- since the terms line up this way it means `f3` happens to be the same as
+-- `fmap` and through equational reasoning we can just substitute all
+-- occurrences of `f3` with `fmap`.
+----
+
+The basic idea here is that we apply the function from `a -> b` on the value
+of `Maybe a` in the case that it is a `Just a` value. If it is a `Nothing`
+value it will result in a `Nothing` in the the type of `Maybe b` for the
+result of the function.
+
+=== Conclusion
+
+Hopefully I have been able to illustrate the value of using the basic idea of
+parametricity (even in a very informal way without _real math(s)_) as both a
+way to reason about other people's code and also offering an example of how
+inspecting types signatures using basic understanding of parametricity can
+show logical design level errors in your own API design.
+
+Next time, we will conquer space and domesticate alien species...or
+something...with our new found super powers. Cheers.

@@ -1,0 +1,64 @@
+=== Composition
+
+Let's look at a Scala REPL session I started that loaded the previous
+`functions.scala` file in:
+
+[source,scala]
+----
+scala> :load functions.scala
+Loading functions.scala...
+defined object sgfunctions
+
+scala> import sgfunctions._
+import sgfunctions._
+
+scala> transformText(lowerCase, "YO YO YO DAWG")
+res0: String = yo yo yo dawg
+
+scala> transformText(prefix("$ "), "ls -la")
+res1: String = $ ls -la
+
+scala> transformText(parens, "I love you")
+res2: String = (I love you)
+----
+
+Here we are using a higher order function (HOF) called `transformText`
+which I defined in the `sgfunctions` object of the examples.
+
+Now this is all well and nice, but what's the point of showing this
+code?
+
+Well so far it's not that interesting so let's explore a concept that
+comes from mathematics. OMG MATHZ!!!11
+
+Yeah, it's gonna come up again. Pretty soon but don't worry, it's our
+friend.
+
+.Composition is a simple way to line up functions when their types
+line up.
+
+What would this look like for our example. Say we wanted to `parens`
+a peice of text and then prefix it. Well we already wrote the definitions
+of each part. I don't want to now have to define a `parensAndPrefix`
+function now.
+
+Great news, we don't have to. Instead we just do this:
+
+[source,scala]
+----
+scala> transformText(parens _ andThen prefix("$ ") _, "ls -la")
+res6: String = $ (ls -la)
+----
+
+Alternatively we could say this for the same result:
+
+[source,scala]
+----
+scala> transformText(prefix("$ ") _ compose parens _, "ls -la")
+res7: String = $ (ls -la)
+----
+
+I find the first reads better for thos that are newer to these ideas.
+It's there, use it if it works for you and improves understandability of
+your code.
+

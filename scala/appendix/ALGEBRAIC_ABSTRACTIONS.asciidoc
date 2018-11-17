@@ -1,0 +1,124 @@
+=== Algebraic Abstractions
+
+You might think this goes in a different tutorial but algebraic abstractions
+can and usually are mightily helpful when designing APIs in a functional way.
+
+I don't want to make this part formal, rather I would like to offer hopefully
+helpful intuitions for the working programmer to get use out of starting to
+think in a functional way. You will need to read more on the topic to fill in
+the gaps. This should not be considered a formal or a complete treatment on
+the topic by any means.
+
+==== Algebraic Data Types
+
+We have already seen two basic forms of algebraic data types previously,
+namely:
+
+* Sum types
+* Product types
+
+We have even seen us combine the forms together where we can have multiple
+value constructors for a _type_ (aka trait or abstract class in Scala specific
+terminology) which also take one or more arguments.
+
+Another important form of algebraic data type is the recursive type, which
+can also be combined with sum and product types. Let's review an example:
+
+[source,scala]
+----
+/**
+  * In the git object store we have different types of objects:
+  * * tree
+  * * commit
+  * * blob
+  * * tag
+  *
+  * These are the types we will consider modeling below with
+  * special attention paid to the Tree value constructor.
+  */
+sealed trait GitObjectKind
+case object GitTreeKind extends GitObjectKind
+case object GitCommitKind extends GitObjectKind
+case object GitBlobKind extends GitObjectKind
+case object GitTagKind extends GitObjectKind
+
+sealed trait GitTreeEntryMode
+// TODO
+
+case class GitTreeEntry(
+    mode: GitTreeEntryMode
+  , kind: GitObjectKind
+  , sha: String
+  , path: String)
+
+// Note all the value constructors of GitObject has a `sha` attribute...
+// we will come back to this later.
+sealed trait GitObject
+case class GitTree(
+    sha: String
+  , size: Int
+  , entries: List[GitTreeEntry]) extends GitObject
+case class GitCommit(
+    sha: String
+  , parent: GitTree
+  , tree: GitTree
+  , author: String
+  , committer: String) extends GitObject
+case class GitBlob(
+    sha: String
+  , size: Int
+  , content: String) extends GitObject
+case class GitTag(
+    sha: String
+  , name: String
+  , message: String) extends GitObject
+----
+
+TODO: discuss what we did above and how we could evolve it.
+
+==== Functor
+
+This is just a name. Don't get bogged down by how foreign is reads. It's just
+a name. And the intuition I want to provide here is the idea of needing to
+`map` over a container value of a specific type to produce a container value
+of a new type.
+
+Let's look at a motivating example below:
+
+[source,scala]
+----
+// We are given a list of grocery items in a shopping list that a user typed
+// in free form text on their cell phone. We want to search our catalog and
+// return (for each distinct item in the shopping list) a new list of specific
+// grocery store items that they could choose from. We assume we have a function
+// in our current scope called getSuggestedGroceries which takes a `String`
+// and returns a `List[GroceryItem]`.
+
+def processGroceries(xs: List[String]): List[List[GroceryItem]] =
+  xs map getSuggestedGroceries
+
+// It really is that simple folks. That is because List[A] type has a method
+// named map which accepts a function that takes an `A` and results in a `B`.
+// and applies this function to each element of the `List[A]` to yield a
+// result of `List[B]`. In the above case `A` is `String` and `B` is
+// `List[GroceryItem]`. Now we can display the list of options that match the
+// the free form text input the user gave to have them choose which grocery
+// item in the store they want to choose plus the quantity/amount.
+----
+
+This is a powerful coding _pattern_ because this kind of transformation is
+needed all over software programs.
+
+Now let's look at an example that isn't on a `List[A]` value. We learned a
+little about `Option[A]` already (if not then see
+link:USEFUL_TYPES_STDLIB.asciidoc[]) so let's look at how map may be
+implemented on that to be useful.
+
+Remember there are two ways to create a value of `Option[A]`:
+
+* We can create a value with a `A` value inside with `Some(a)` where a is of
+  type `A`
+* Or we can create a value that represents that no value of `a` underlies it
+  with `None`.
+
+

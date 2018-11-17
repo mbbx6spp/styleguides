@@ -1,0 +1,1053 @@
+== Scala: An Opinionated Guide
+
+This guide to learning Scala is split up into three parts:
+
+* Quickstart
+* Parts To Avoid (And Their Alternatives)
+* Appendix
+
+I don't cover all features of the Scala language by design.
+
+The intended audience of this guide is one of the following:
+
+* An operations engineer who has written a some Ruby, Python, or Perl (gah)
+* A programmer new to Scala and wants to know only the 'good parts' to
+  get started quickly and make up their own mind later what works for them.
+* Someone who is familiar with Scala on a basic level but is used to writing
+  Scala as if it is a less verbose Java. *This audience should be prepared to
+  unlearn a few things about Scala. Good luck. :)*
+
+I do have strong opinions on Scala style and form. This will become obvious to
+you, especially in the second part of this which will be design and/or
+philosophically based.
+
+This tutorial/guide is licensed under the
+http://creativecommons.org/licenses/by-nc-sa/4.0/[Creative
+Commons Attribution-NonCommercial-ShareAlike] license.
+
+I recommend you are comfortable with link:appendix/FUNCTIONS.asciidoc[defining
+functions], link:appendix/PARAMETRIC_POLYMORPHISM.asciidoc[parametric
+polymorphism], link:appendix/COMPOSITION.asciidoc[composition],
+link:appendix/PATTERN_MATCHING.asciidoc[pattern matching], and of course
+working inside link:appendix/REPL.asciidoc[the Scala REPL] before proceeding
+with the Quickstart section.
+
+include::QUICKSTART.asciidoc[]
+
+== Parts To Avoid (And Their Alternatives)
+
+Scala is a kitchen sink language. This has pros and cons.
+
+It does offer:
+
+* a well typed language (within reason and when you know where to look)
+* a language with standard library that is production hardened
+* a compiler that generates fairly performant JVM bytecode in many cases
+  (at least compared to other non-Java JVM language offerings)
+* JVM language tooling that is evolving into maturity (I cannot comment on
+  the present state of it's CLR tooling)
+* it also runs on the JVM as well as the CLR for .NET proponents.
+
+Until a viable alternative is proposed for the JVM (the runtime I typically
+need to target at work), the trick for me is to know what parts of the
+kitchen sink language to avoid.
+
+Each of the sections in this part will discuss the parts and styles of Scala
+you should avoid to follow a more declarative and functional style. My claim
+is that following a more declarative and functional style of software
+structure is more maintainable and tends to ship with less bugs, but I don't
+have hard and fast quantitative evidence on this as every experiment I can think
+of designing that could provide evidence one way or another has major limitations.
+However, I can cite some limited studies and research (TODO) that offer some
+limited evidence to support these claims, though others suggest other studies
+support the opposing side too. :) Always be skeptical. Always.
+
+This is merely based on my own experience of building (from scratch) and
+evolving into maturity and maintaining large codebases in both OO and FP
+styles over the last 16 years. We will first dive in to what is typical in OO
+style and iterate to find valid alternative constructs to use.
+
+The general claim I make is that imperative and object oriented constructs of
+the language should be avoided except when wrapping or calling ill-defined
+Java or Scala dependencies from your code but these constructs should be
+encapsulated appropriately and not leaked out in the interfaces or APIs you
+offer clients.
+
+Let's begin.
+
+=== Don't Scala Like You Java
+
+Be warned if you are a Scala developer that was brought up the Java Way(tm)
+and you write Scala mostly like you previously wrote Java code, your very
+core might be offended by reading the subsections under this 'Parts To Avoid'
+section.
+
+It might mean unlearning a considerable amount that you have immense muscle
+memory for. This can make a person feel quesy or unsettled.
+
+The general complaint of mine that if you want to get more out of
+Scala you shouldn't write Scala in an imperative object oriented way. Why
+not just write your code in Java? The savings of writing slightly less
+boilerplate code in Scala for the equivalent Java code is offset by the
+Scala overheads such as worse IDE support, more tooling headaches, Scala
+gotchas in the standard library that you might not be aware of already, and
+more. At least use Scala for the good stuff. :)
+
+In my experience you should avoid these constructs in particular:
+
+* Stack unwinding exceptions
+* Imperative loops
+* OO classes
+
+Ok, let's go explore the alternatives to these imperative and object oriented
+constructs.
+
+==== Avoid Stack Unwinding Exceptions
+
+No matter your programming background it would be hard to avoid having seen
+a try/catch/finally or its equivalent in most imperative languages (e.g.
+Java, C#, Ruby, Python, etc.). Scala also allows you to do this too.
+
+[source,scala]
+----------------------------------------------------------------
+
+  val conn = ...
+  try {
+    conn.execute(....)
+  } catch {
+    case se: SQLException => se.printStackTrace; throw se
+    case e => throw e // rethrow other exceptions w/o stderr logging
+  } finally {
+    conn.close
+  }
+----------------------------------------------------------------
+
+In Scala there are different ways of handling this. First let's look at a
+very simple function, `sqrt`. It's purpose is to return the square root
+of the given double value. The problem is it can accept any `Double`,
+including negative ones.
+
+[source,scala]
+----------------------------------------------------------------
+def sqrt(d: Double): Double =
+  if (d < 0) { throw new ArgumentException("We can't square root a negative value") }
+  else { Math.sqrt(d) }
+----------------------------------------------------------------
+
+This approach of throwing an `ArgumentException` is a problematic way to
+solve the issue, but is one that is commonly reached for. You are forcing the
+caller to have to either wrap their call to your function inside a try/catch
+or a try/finally block or "leak" an exception to its caller. This seems
+brittle at best. Exceptions were really meant to be for _exceptionally_
+unexpected conditions being met, e.g. `OutOfMemory`.
+
+Other times I have seen something like this to "solve" the issue, but this
+gives an incorrect result when the input is negative, which I am not fond of:
+
+[source,scala]
+----------------------------------------------------------------
+def sqrt(d: Double): Double =
+  if (d <= 0) { 0 }
+  else        { Math.sqrt(d) }
+----------------------------------------------------------------
+
+A more correct approach might be to change the type signature from `Double =>
+Double` to `Double => Complex` where you define a custom type `Complex` and
+implement appropriately. This is a correct solution, but not necessarily
+always what the consumer of your APIs want. You might provide this variant of
+the square root function along with one that is `PartialFunction[Double, Double]`
+as this offers the chance for the caller to _do the right thing_ and models
+this situation appropriately. It is a partial function when you go from a
+`Double` and expect a `Double` as a result.
+
+Let's see what this might look like:
+
+[source,scala]
+----
+def sqrtPF = new PartialFunction[Double, Double] {
+  def apply(d: Double): Double = Math.sqrt(d)
+  def isDefinedAt(d: Double): Boolean = (d >= 0)
+}
+
+// The caller of your code then _should_ do this:
+if (sqrtPF.isDefinedAt(doubleFromExternalInput)) {
+  val result = sqrt(doubleFromExternalInput)
+  // Do something with result here...
+} else {
+  // Do whatever should be done for the case that input is
+  // not well defined for this partial function.
+}
+----
+
+Another alternative is to return an `Option[Double]`. This might look
+something like the next snippet of code:
+
+[source,scala]
+----------------------------------------------------------------
+def sqrt(d: Double): Option[Double] =
+  if (d < 0) { None }
+  else       { Some(Math.sqrt(d)) }
+----------------------------------------------------------------
+
+This does express in some way that a `Double` value isn't always the most
+appropriate value for a result. Instead no value for square root can be
+calculated for certain inputs (i.e. for inputs that are negative).
+
+This is exactly what the type `Option[A]` expresses for any type `A`.
+Sometimes the value is an actual value in `A`, others it is just `None`.
+
+This forces the caller of the function to at least willfully ignore the case
+where the value returned is `None` or at a minimum suggest it handles it
+via the type.
+
+This also does a good job of representing the domain area. Before we continue
+I think we have exhausted good alternatives for this specific case of the
+`sqrt` function so let's move on to a slightly different use case to look
+at other alternatives for a different usage.
+
+*TODO: change the rest of this subsection to swap out `sqrt` function use
+case with `parseUserIdFromQueryString`.*
+
+You might instead though want to inform the caller exactly why there is
+no value. This is where you might first reach for `Either[E, A]`. Essentially
+it can hold either a value of `E` (the _error_ type) or a value of `A`.
+
+Let's see what this might look like:
+
+[source,scala]
+----------------------------------------------------------------
+def parseUserIdFromQueryString(s: String): Either[String, Int] =
+  sys.error("todo")
+
+// calling code would do something like...
+parseUserIdFromQueryString(userInput) match {
+  case Left(reason) => println("Error: " + reason)
+  case Right(x)     => println("Result: " + x.toString)
+}
+
+// However because Either does not have map/flatmap defined...we can't do:
+// Assume: findByUserId type is `Int => User` and `User` is a custom type
+for {
+  i <- parseUserIdFromQueryString(userInput) // only pull out if "success" or "right"
+  u <- findUserById(i) // not sure why you would do this; it's just for show
+} yield u
+----------------------------------------------------------------
+
+The above code now gives us a reason (as a String) for why we don't get
+back a _success_ (or `Right`) value. At least that is something.
+
+Now in the example above the `Option[Double]` probably works more often
+than not.
+
+Now let's say we instead have a more interesting use case. We have a need
+to be able to sequence "successful" value pulls for a structure semantically
+_like_ `Either`. Well, there is a library called Scalaz (pronounced "Scala
+Zed") that has a type called `\/[E, A]` (pronounced "Disjunction"). Here is
+how we would construct and use such a type:
+
+[source,scala]
+----------------------------------------------------------------
+// do the imports for the Scalaz library
+import scalaz._
+import Scalaz._
+
+final case class User(id: Int, billingInfo: Option[BillingInfo], ...)
+def findUserById(id: Int, conn: DBConnection): Option[User] =
+  conn.executeSQL("SELECT * FROM `users` WHERE id = ?", id).headOption map toUser
+
+// inside your logic to return billing info of a user
+val result: String \/ User = for {
+    u <- findUserById(userInput, dbconn) \/> s"No user found with id ${userInput}"
+    b <- u.billingInfo \/> s"User ${userInput} has no billing information"
+  } yield b
+----------------------------------------------------------------
+
+Here it becomes more important to understand where the error occurred.
+
+The above shows how we can solve in a specific sequence of actions. Sometimes
+we want to _run_ validations on data and one isn't dependent on the others,
+thus we want an accumulation of errors rather than the first error that
+occurs in the sequence of actions we are performing.
+
+Think of a web form submitted by a user. Obviously we should have client
+side checking, but the form could be submitted from anywhere on the
+internet or via a `POST` HTTP API for automation.
+
+[source,scala]
+----------------------------------------------------------------
+def validEmailAddress(email: String): ValidationNel[String, EmailAddress] = ...
+def validUsername(username: String): ValidationNel[String, Username] = ...
+def validAge(dob: String): ValidateNel[String, Age] = ...
+
+val form: Map[String, String] = request.httpParams
+
+val result = validEmailAddress(form["email"]) |@| validUsername(form["username"]) |@| validAge(form["dob"]) {
+  case (email, username, age) => sys.error("todo") /* 1 */
+}
+----------------------------------------------------------------
+The part labeled `/* 1 */` in the code is where we put code that only needs
+to handle valid email, username, and age objects that were constructed and
+validated from the user input. This allows us to focus on the _happy path_
+of the coding. If any errors did occur, it would show as a `NonEmptyList`
+of string error messages in the result.
+
+Hopefully you can see that avoiding throwing / catching exceptions
+in an imperative way and encoding it in more useful types provides us with
+much more power and results in simpler, less error prone code. This is
+because as callers of better behaved more `total` functions (e.g. not
+throwing exceptions that unwind the stack) we can defer _unpacking_
+the type and doing what we need to do with the underlying elements
+until we have full context to do so. Ever attempted to handle an
+exception and realized you didn't have enough context to deal with it?
+
+I know I have, many a time.
+
+=== Avoid Imperative Loops
+
+TODO: show functional List and collection functions and how they are
+more powerful than imperative loop constructs and less error prone.
+
+=== Avoid Object Oriented Classes
+
+Yep. You read that heading right. Forget OO classes. OMGFMLWTF!? I am not
+saying you forget OO classes in an only-OO language (e.g. Java, Python,
+Ruby, etc.). I am saying forget OO classes in Scala (unless required for
+a workaround or for the purposes of integrating/wrapping ill-defined Java or
+Scala dependencies written in an OO style with exception handling instead of
+better types). See I have a caveat there. And that is important if you want
+to deliver systems that use other libraries even the Java or Scala standard
+library APIs. Perhaps especially them. :)
+
+Ok, I've lost some of you already and that's ok. I love you anyway (I have a
+big heart). Bear with me while I make a case for this seemingly insane idea.
+
+.What do we normally use classes for in the OO sense?
+
+Pause a minute. Think about this on your own before proceeding. Here's a
+flower:
+
+
+                 , .-.-,_,
+                 )`-.>'` (
+                /     `\  |
+                |       | |
+                 \     / /
+                 `=(\ /.=`
+                  `-;`.-'
+                    `)|     ,
+                     ||  .-'|
+                   ,_||  \_,/
+             ,      \|| .'
+             |\|\  , ||/
+            ,_\` |/| |Y_,
+             '-.'-._\||/
+                >_.-`Y|
+                ` .-"||"-.
+                  \'----'/
+                   |:.  |
+                   |::. |
+                  /::::  \
+                .:::'     '.
+               /:::         \
+              ;:::'          ;
+              |:::           |
+              |:::           |
+              |:::           |
+              ;:::           ;
+              \:::.          /
+           jgs ':::..      .'
+                `""-----""`
+
+
+I mean it. Just think for a moment and meditate.
+
+
+                                                  ____
+       ___                                      .-~. /_"-._
+      `-._~-.                                  / /_ "~o\  :Y
+          \  \                                / : \~x.  ` ')
+           ]  Y                              /  |  Y< ~-.__j
+          /   !                        _.--~T : l  l<  /.-~
+         /   /                 ____.--~ .   ` l /~\ \<|Y
+        /   /             .-~~"        /| .    ',-~\ \L|
+       /   /             /     .^   \ Y~Y \.^>/l_   "--'
+      /   Y           .-"(  .  l__  j_j l_/ /~_.-~    .
+     Y    l          /    \  )    ~~~." / `/"~ / \.__/l_
+     |     \     _.-"      ~-{__     l  :  l._Z~-.___.--~
+     |      ~---~           /   ~~"---\_  ' __[>
+     l  .                _.^   ___     _>-y~
+      \  \     .      .-~   .-~   ~>--"  /
+       \  ~---"            /     ./  _.-'
+        "-.,_____.,_  _.--~\     _.-~
+                    ~~     (   _}       -Row
+                           `. ~(
+                             )  \
+                            /,`--'~\--'~\
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                             ->T-Rex<-
+
+
+Hopefully you agree that for the most part (without getting too formal or
+pedantic with wording or definitions) we use classes to define types,
+their basic structure, implement its public interface in methods that are
+grouped/namespaced under it. At least primarily.
+
+So to state it another way, we are bundling type structure and grouping
+behaviors of that type together.
+
+If you disagree here then submit a pull request so we can have a respectful
+though hopefully meaningful and lively (passionate) debate about this.
+
+_Ok, now what if I told you that you really just want types and functions?_
+
+And coupling them together isn't all that meaningful if you have sane,
+consistent and intuitive namespacing. In fact using classes, may even be
+detrimental in some cases. There might also be better ways to define types,
+interfaces, and the mappings between them. :)
+
+Ok, I lost the next round of you on this suggestion. Again I really
+do still love you all. It's cool. We can still be friends, though friends
+don't let friends use OO classes and interfaces in languages with better
+types available to "model" software without fair warning. :)
+
+I will illustrate with an example, which may or may not sway you if you
+aren't already curious or open to change. Remember it is just an example
+to illustrate the point. This doesn't prove anything. It is just an
+illustration that you don't need to use OO classes to model this case
+well (arguably better than using OO patterns).
+
+==== Alternative #1: Closed Types
+
+Let's say you are building a CI/CD pipeline in Scala. Why not? Now
+we want to model the following "world" in software:
+
+* We have four different environments: local, integ, staging, production.
+  See link:appendix/ALGEBRAIC_ABSTRACTIONS.asciidoc[] for the section on
+  _'Algebraic Data Types'_ if not already familiar with how to define sum
+  types in Scala. For our needs here we might do:
+
+[source,scala]
+----
+sealed trait Environment
+object Environment { // this is a companion class for Environment trait
+  // these are the 'value constructors' as I call them for the _type_
+  // Environment.
+  final case object Local extends Environment
+  final case object Integ extends Environment
+  final case object Staging extends Environment
+  final case object Production extends Environment
+}
+----
+
+* Developers make their changes for new features or bugfixes in their
+  local environment first, write tests (hopefully), add those tests
+  to the test suite, and submit a code review for the rest of the team
+  and CI system to _evaluate_.
+* Other team members will review the code change for code style and
+  high level semantics and structure. When they like what they see in
+  the review they will "+2 review" it. If they have minor comments that
+  need addressing but do not need to re-review after the changes are made
+  they can "+1 review" the change. When those minor comments are addressed by
+  the author they can give themselves a "+2 review" assuming another reviewer
+  has already "+1 review"-ed a previous patchset of the review.
+* A `precommit` hook will be triggered upon initial submission of the review
+  (and any subsequent changes to the review) which will run automated
+  check style, static analysis, and unit test suite runs and report
+  success or failure of these checks back to the review system as a "+1
+  verify" from the CI system user.
+* Once both a human reviewer +2s the change and the CI server running
+  the `precommit` hook +1s the change, the author can submit the change
+  to the non-prod line persistent branch (let's say `develop`). Although
+  this isn't my preferred way of operating, most people are used to the
+  git-flow inspired workflow which this is emulating.
+* At this point a `commit` hook is triggered in the CI server and run.
+* This `commit` hook could tag the change for automatic deployment to
+  the integ environment, once integ is running with the new code, we run
+  an integration and system level test suite against the running environment,
+  to validate the runtime characteristics of the code as defined in the
+  (hopefully) newly added tests.
+* Once the integ deployment, and tests run successfully for this change,
+  this then gets promotes to the staging environment where it can sit there
+  with more data and hits using the new feature (hopefully). Manual
+  verification may be required at this stage. This is where the develop CI/CD
+  line ends for the moment.
+* When you have a set of changes on the staging environment that are deemed
+  stable enough to deploy to production after automated, long running, and/or
+  manual verification checks and tests suites run against it, we "promote" to
+  production by creating a new review from the develop branch to the master
+  branch.
+* Upon submitting the change to master, an automatic deployment to production
+  is triggered (hopefully you have zero-downtime deployments scripted already).
+
+In our case the review system is Gerrit, but it could be Github, Bitbucket,
+Stash/Crucible, or whatever. We just assume there will be some API and
+webhooks available to integrate with the code review system and the CI
+server which actually RUNS the `precommit` hook.
+
+What we want to build is a CI/CD "conductor" system that controls the logic
+and throttles and controls the various CI and deployment jobs that are
+triggered in the interaction between the review system and the CI server.
+
+Our CI/CD "conductor" service will receive requests from the review system
+in webhook callbacks (via HTTP) and then determine the appropriate course
+of action based on some state for the service/project and the state of
+the deployments for each environment for it.
+
+Let's take a first cut at just the types without the notion of OO classes.
+There are many ways we can model this in OO so I will not attempt to here:
+
+[source,scala]
+----------------------------------------------------------------
+
+/* Here we are creating a "closed" type, where the type used in interfaces
+ * is the trait and the "constructors" to create the value of such a type
+ * is limited to just the case objects/classes that extend from this sealed
+ * trait. This means that the only possible ways we can construct a value
+ * of the type `Environment` is using one of the case objects listed below
+ * that extend from it. This has practical implementations in terms of what
+ * the compiler can tell her about our logic later on.
+ */
+sealed trait Environment
+final case object Local extends Environment
+final case object Dev extends Environment
+final case object Integ extends Environment
+final case object Staging extends Environment
+final case object Production extends Environment
+
+/* Note: sometimes the type of type created above is named a Sum type, other
+ * times it's called a (Disjoint) Union type.
+ * The reason for this is the sum of all the case objects/classes of the
+ * type (`Environment` in this case) comprise the full set of possible
+ * values for the type. I will use the terminology of Sum and Product
+ * types throughout this documentation.
+ */
+
+/* Here are the value constructors */
+final case object Abandon extends ReviewScore
+final case object Refactor extends ReviewScore
+final case object SwitchReviewer extends ReviewScore
+final case object MinorComments extends ReviewScore
+final case object Accepted extends ReviewScore
+/* Here is the "type" */
+sealed trait ReviewScore
+// For each "type" we can define a companion object with
+// helper/convenience functions. Here we define mapping
+// between the int values used in our review system to
+// indicate the different score intents and the value
+// constructors of the +ReviewScore+ type.
+object ReviewScore {
+  def intScore(score: ReviewScore): Int = score match {
+    case Abandon        => -2
+    case Refactor       => -1
+    case SwitchReviewer => 0
+    case MinorComments  => 1
+    case Accepted       => 2
+  }
+
+  def fromInt(intScore: Int): Option[ReviewScore] = intScore match {
+    case -2 => Some(Abandon)
+    case -1 => Some(Refactor)
+    case 0  => Some(SwitchReviewer)
+    case 1  => Some(MinorComments)
+    case 2  => Some(Accepted)
+    case _  => None
+  }
+}
+
+sealed trait ChangeEvent
+final case object ReviewPublished extends ChangeEvent
+final case object ReviewUpdated extends ChangeEvent
+final case object ReviewSubmitted extends ChangeEvent
+final case class ReviewReviewed(score: ReviewScore) extends ChangeEvent
+final case class ReviewVerified(url: URL) extends ChangeEvent
+final case class ChangeDeployed(env: Environment) extends ChangeEvent
+final case class DeployVerified(env: Environment) extends ChangeEvent
+final case class ChangePromoted(env: Environment) extends ChangeEvent
+
+object Functions {
+  // TODO
+}
+
+
+----------------------------------------------------------------
+
+Now I am going to refactor this based on the practices I advocate. Firstly
+notice that there is a lot of pollution in the namespace/package we define
+our types and value constructors inside. Above we didn't specify the
+package that we would put our definitions in, so we should add a package
+declaration so we don't pollute the global namespace with all these names.
+
+This is simple at the top of the file we would put:
+
+[source,scala]
+----------------------------------------------------------------
+package conductor
+----------------------------------------------------------------
+
+Ok, on to the next transformation of the simplest way of defining algebraic
+data types (including the sum types above). We are still polluting our
+`conductor` package namespace quite a bit and we only just got started with
+our types for such a simple application.
+
+Also note if we were to define a `initialChangeEvent` function inside of
+the Functions object and we defined it as below, you will notice that
+type inference in Scala does not do us justice.
+
+[source,scala]
+----------------------------------------------------------------
+scala> def initialChangeEvent = ReviewPublished
+initialChangeEvent: ReviewPublished.type
+
+scala> :t initialChangeEvent
+ReviewPublished.type
+----------------------------------------------------------------
+
+Instead of setting the return type of `initialChangeEvent` to the trait,
+`ChangeEvent`, it is setting it to the object type of the value constructor.
+
+This can cause us problems as we define more and more functions that might
+use Scala's type inference when we use `initialChangeEvent`.
+
+So here is my recommendation to solve both these issues:
+
+[source,scala]
+----------------------------------------------------------------
+
+sealed trait ChangeEvent
+object ChangeEvent {
+  final case object ReviewPublished extends ChangeEvent
+  final case object ReviewUpdated extends ChangeEvent
+  final case object ReviewSubmitted extends ChangeEvent
+  final case class ReviewReviewed(score: ReviewScore) extends ChangeEvent
+  final case class ReviewVerified(url: URL) extends ChangeEvent
+  final case class DeployVerified(env: Environment) extends ChangeEvent
+  final case class ChangeDeployed(env: Environment) extends ChangeEvent
+  final case class DeployVerified(env: Environment) extends ChangeEvent
+  final case class ChangePromoted(env: Environment) extends ChangeEvent
+
+  def reviewPublished: ChangeEvent = ReviewPublished
+  def reviewUpdated: ChangeEvent = ReviewUpdated
+  def reviewSubmitted: ChangeEvent = ReviewSubmitted
+  def reviewReviewed(score: ReviewScore): ChangeEvent = ReviewReviewed(score)
+  def reviewVerifed(url: URL): ChangeEvent = ReviewVerified(url)
+  def deployVerified(env: Environment): ChangeEvent = DeployVerified(env)
+  def changeDeployed(env: Environment): ChangeEvent = ChangeDeployed(env)
+  def deployVerified(env: Environment): ChangeEvent = DeployVerified(env)
+  def changePromoted(env: Environment): ChangeEvent = ChangePromoted(env)
+}
+
+object Functions {
+  def initialChangeEvent = ChangeEvent.reviewPublished
+}
+
+----------------------------------------------------------------
+
+Here you will notice there is a lot more boilerplate, but we can control
+the value constructor's type inference now and we might possibly (although
+we haven't yet) be able to "hide" the value constructors so the only way
+for consumers of the `ChangeEvent` type to create values is via the companion
+object's helper methods that have the correct return type.
+
+If we check the type of the `initialChangeEvent` function now, we get back
+what we want, which is `ChangeEvent`.
+
+It also means we have more semantic context when we are creating values of
+this sum type. We use `ChangeEvent.reviewUpdated` instead of just
+`ReviewUpdated` which might not read well for reviewers or those newer to
+the codebase. So we solved the namespace pollution problem too.
+
+I do strongly suggest you use this style for sum types consistently. So
+as an exercise convert the other sum type and value constructor definitions
+above to the style implemented for `ChangeEvent` in the code snippet directly
+above.
+
+Note: I usually define sum types with a couple of minor alterations to the
+above in my own production code in Scala, but this will get you far without
+needing to understand `@inline` and why you might use them for the constructor
+helper methods in the type's companion object.
+
+Now writing the finite state machine for the CI/CD conductor application
+shouldn't be too hard...
+
+[source,scala]
+----------------------------------------------------------------
+
+// I assume you refactored the sum types above to the form suggested for
+// `ChangeEvent` already.
+
+// Adding some types here...
+
+// A product type that represents a ticket for either a bugfix or a new
+// feature. See below for understanding what a product type is (basically
+// it just takes multiple values in it's value constructor and it's
+// cardinality can be defined by the product of the cardinality of it's
+// constituents. i.e. all possible values of this product type are all
+// possible values for it's first constructor argument multiplied by the
+// next constructor argument's possible value space multiplied ... and so
+// on.
+//
+// Case classes are not OO classes. They provide a way to naturally do
+// pattern matching without extra boilerplate code inside a companion object
+// plus they are (by default) immutable. You typically will not be defining
+// methods directly on case classes or objects unless they are query
+// convenience methods.
+final case class Ticket(ticketType: TicketType, id: String)
+
+sealed trait TicketType
+object TicketType {
+  final case object Bugfix extends TicketType
+  final case object Feature extends TicketType
+  final case object Automation extends TicketType
+
+  @inline def bugfix: TicketType      = Bugfix
+  @inline def feature: TicketType     = Feature
+  @inline def automation: TicketType  = Automation
+}
+
+object Functions {
+  def initialChangeEvent = ChangeEvent.reviewPublished
+  def initialChangeStatus = ChangeStatus.inReview
+
+  final case class State(
+      ticket: Ticket
+    , review: Review
+    , status: ChangeStatus,
+    , isVerified: Boolean
+    , isReviewed: Boolean)
+
+  type ProcessResult = (IO[Unit], State)
+  def processChangeEvent(evt: ChangeEvent, s: State): ProcessResult = evt match {
+    case ChangeEvent.ReviewPublished  => (triggerCIPrecommitHook(s.ticket, s.review), s)
+    case ChangeEvent.ReviewUpdated    => (triggerCIPrecommitHook(s.ticket, s.review), s)
+    case ChangeEvent.ReviewSubmitted  => (triggerCICommitHook(s.ticket, s.review), s.copy(status=ChangeStatus.submitted))
+    case ChangeEvent.ReviewReviewed(score) =>
+      score match {
+        case Abandon        => (abandonReview(s.ticket, s.review), s)
+        // wait for another change event before proceeding
+        case Refactor       => (IO {}, s.copy(isReviewed=false)
+        case SwitchReviewer => (suggestNewReviewer(s.ticket, s.review), s.copy(isReviewed=false)
+        // wait for another change event before proceeding
+        case MinorComments  => (IO {}, s.copy(isReviewed=true))
+        case Accepted       => (autoSubmit(s.ticket, s.review), s.copy(isReviewed=true)
+      }
+  }
+  // EXERCISE1: Does this compile? Any warnings (make sure to turn warnings on)?
+  // EXERCISE2: Fix the errors or warnings yourself. Yes, I am a mathematician
+  //            why do you ask? ;)
+
+  def triggerCIPrecommitHook(t: Ticket, r: Review): IO[Unit]  = sys.error("todo")
+  def triggerCICommitHook(t: Ticket, r: Review): IO[Unit]     = sys.error("todo")
+  def abandonReview(t: Ticket, r: Review): IO[Unit]           = sys.error("todo")
+  def suggestNewReviewer(t: Ticket, r: Review): IO[Unit]      = sys.error("todo")
+  def autoSubmit(t: Ticket, r: Review): IO[Unit]              = sys.error("todo")
+}
+----------------------------------------------------------------
+
+The benefit here of defining our types using sum and product types in place
+of OO classes are:
+* Sum types allow us to get feedback from the compiler as to whether
+  functions that pattern match on the value constructors cover all cases
+  of the type or not. This is very valuable and can find annoying bugs much
+  earlier if you turn on compiler warnings and actually read them. :)
+* By default sum and product types offer immutability, forcing the caller
+  to copy the values with defined changes to return or pass into other
+  functions. This makes understanding code flow and logic much easier
+  and eliminates a whole class of bugs that implicit mutation in typical
+  OO class style yields.
+* We simplify the code by separating data structure from logic.
+* The observant reader might notice `ProcessResult` is a tuple of `(IO[Unit],
+  State)`. We return the IO actions that need to be performed plus the new
+  state. This is expressing effects in the type signature (although there are
+  better ways to do this) as opposed to implicit side effects. This is
+  important for an idea in functional programming to uphold _referential
+  transparency_. I till talk about this a little more later.
+
+_Note: OO philosophy has changed recently to prefer immutability and "value
+objects" over traditional mutable objects, but that's heavily influenced by
+algebraic data types and it's really how I would define OO-style classes._
+
+While it is great that OO is finally recognizing how implicit mutability
+impacts code complexity and increasing maintenance costs and now advocates
+for more FP ideas, it still condones complecting the type structures,
+interfaces, and behaviors together. This troubles me. :)
+
+Hopefully the next illustration demonstrates how we can extend types using
+a very FP construct, typeclasses. In Clojure, you might know this as
+`protocols`. In Haskell and Scala they are called `typeclasses` although in
+Scala we use a couple of language features in conjunction to emulate them
+since the language itself doesn't support typeclasses directly. (Note:
+technically the Clojure language doesn't support typeclasses as first
+class idea since defining a protocol is just a macro.)
+
+==== Alternative #2: Decoupled, Extensible Interfaces
+
+Sometimes you can't just use close types to model your requirements in software.
+This section will look at a way to define extensible yet decoupled but type
+safe interfaces in Scala using implicit parameters (among other things) to
+mimick Haskell's typeclasses (though slightly differently).
+
+So let's say you have this SaaS application already shipped and it's a
+cool app but your customers (aka tenants) are asking for a better
+administrative and billing control panel for both internal and external use.
+You have the old admin console which barely works, it's written in a language
+that was hip 5 years ago and your codebase is a total mess for it.
+
+Nobody wants to touch it because of the quality and instability of the
+environment, dependencies, and brittleness of the admin app. It is
+demotivating your engineers. Even the ones that aren't totally burned out
+from 3 years working crazy hours in your startup requiring 80 hour weeks
+minimum most weeks but also the new hires.
+
+Management finally agrees to rewrite just that admin console piece in an
+iterative fashion, one endpoint at a time which will be validated and
+delivered to "beta" tenants and internal users as they are available.
+
+After much research you choose Scala as the language because ... well who
+cares why honestly. You chose it for the purposes of this tutorial. :)
+
+Let's pretend we already ported over the Identity, AuthN and AuthZ parts of
+the code to the JVM and this is available as a library for your Scala service.
+
+You have to keep the same server-side API contract with the legacy admin
+console so that you can avoid totally rewriting the front end just yet. Ok,
+this is a big assumption, but I am not here to manage your software rewrite
+project risks right now. We are learning the right way to model your app
+in Scala WITHOUT OO CLASSES.
+
+Let's say your legacy admin console has these notions (and it's reflected in
+the HTTP API your UI is querying and updating adequately):
+
+* Customer (aka tenant) information such as admin, billing, support
+  contacts, customer type (e.g. individual or organization), and the customer
+  billing plans (with effective and expiration dates for history and billing
+  calculation purposes).
+
+Those are the top level notions but we can quickly see that the following
+fall out from the observations of our current API:
+
+* Billing plan
+* Contact
+* Billing status
+
+I could go on, but I don't think it adds too much value to do so for the
+purpose of this illustration.
+
+In an OO style Scala implementation we might write something that looks like
+this (structurally):
+
+[source,scala]
+----------------------------------------------------------------
+
+trait Customer { /* define interface for customer here */ }
+// Note these are far from one liner definitions typically, but LOCs are
+// not under discussion here as it detracts from the bigger points.
+class IndividualCustomer extends Customer {
+  /** define implementations of required Customer methods found in trait
+    * plus any other private methods that might be needed internally and
+    * all possible OO "constructors" for creating values of this subclass.
+    */
+
+}
+class BusinessCustomer extends Customer { /* see above comment */ }
+class GovernmentCustomer extends Customer { /* see above comment */ }
+
+// ... and it goes on ...
+
+----------------------------------------------------------------
+
+Instead we can just separate the behaviors from the type's interface,
+and its structure.
+
+Let's have a look at the first cut of how we could do that:
+
+[source,scala]
+----------------------------------------------------------------
+
+/* Here we define the types in a sum type, which you can think of like
+ * a better enum.
+ */
+sealed trait ContactType
+final case object AdminContact extends ContactType
+final case object BillingContact extends ContactType
+final case object SupportContact extends ContactType
+
+/*
+ * Here we have one way to define the structure of a contact, so we
+ * create what is called a product type, where it's value constructor
+ * accepts two or more values of other types. The value represented is
+ * a product (in this case) of a:
+ * ContactType x String x String x String x List[PhoneNumber] x List[EmailAddress]
+ * This "product" of it's constituents defines all possible values of this
+ * type.
+ */
+final case class Contact(
+    contactType: ContactType
+  , firstName: String
+  , lastName: String
+  , title: String
+  , phoneNumbers: List[PhoneNumber]
+  , emailAddresses: List[EmailAddress])
+
+/* Again another natural sum type arises in the domain with CustomerType
+ */
+sealed trait CustomerType
+final case object IndividualCustomer extends Customer
+final case object BusinessCustomer extends Customer
+final case object GovernmentCustomer extends Customer
+
+/*
+ * Now things get a little interesting. We have a sum-product type defined here.
+ * Some or all of our sum constructors accept two or more inputs to create
+ * it's value.
+ *
+ * This is still an algebraic data type (sum, product, recursive, hybrid), it
+ * just happens to be a hybrid of sum and product types.
+ */
+sealed trait BillingPlan
+final case class SMBPlan(userCount: Int, featureAMax: Int, ...) extends BillingPlan
+final case class ProPlan(...) extends BillingPlan
+final case class GovtPlan(...) extends BillingPlan
+
+final case class BillingPlanEvent(
+    plan: BillingPlan
+  , effectiveDate: Date
+  , expirationDate: Date)
+
+type BillingPlanHistory = List[BillingPlanEvent]
+
+final case class Customer(
+    id: UUID
+  , name: String
+  , customerType: CustomerType
+  , contacts: List[Contact]
+  , plan: BillingPlanHistory) {
+
+  def billingStatus: BillingStatus = sys.error("todo")
+}
+
+// ...
+----------------------------------------------------------------
+
+What we have here is a clean structural model of our problem domain. We
+aren't worrying about the specific behaviors we need to support for each
+type yet. We don't have to. We can first focus on defining the structure
+in a first pass. Then deciphering the specific behaviors we want to support
+for each type or combination of them in our specific application.
+
+So now let's tackle one of the behaviors that we must support for the first
+endpoint:
+* We need to be able to list customers in a natural sortable fashion. We
+  should do this on the server side, not the client side. In our case this is
+  by name and then id as secondary field to sort on. This is because we might
+  have two customers with the same name. It might be two different departsments
+  within the same larger company or unrelated companies with the same name
+  in different countries.
+
+How can we do this without touching the type definitions above? In Java, this
+might be a world of hurt because either we would have to touch the type
+definitions (e.g. implement `Comparable<T>` or whatever), create a
+delegate class to do this, write a utility helper method which is supremely
+non-OO in style anyway, or a combination of the above.
+
+I prefer to only touch my type definitions when I have uncovered new
+understanding about my problem domain that needs capturing in the structure
+of my types. Not modifying type definitions just for behaviors. This is why
+the FP way of thinking fits my mind quite well, and, I think in time, you will
+see the benefits of this too. It means you will not need to override subclass
+definitions of the `Comparable<T>` interface when you add it to the base class
+definition, as one example.
+
+Here is where we introduce typeclasses. This is inherently NOT OO classes.
+Despite the name of this concept it has nothing to do with object orientation.
+
+We have previously seen that we have gotten so far with closed types (algebraic
+data types of various kinds, e.g. sum, product, hybrid, etc.) but we also need
+to enable uniform, and consistent behaviors acting on those types in an "open"
+or extensible fashion.
+
+In Java we would define an interface (or in this case reuse the existing
+standard interface in the standard library, `Comparable<T>`) and then modify
+the `Customer` class definition to implement it. If we modeled `Customer` in
+Java as an interface or an abstract class with subclasses for the different
+types of customers with different structural representation that the base
+class didn't have access to, then we might need to implement
+`int compareTo(T t)` in each of the leaf classes. This may not be a big deal
+when you only have three subclasses, but it can become unweildy pretty fast.
+
+And frankly it is an unnecessary way of writing code in Scala. In Scala we have
+this notion of _implicits_ which are extremely powerful. With all things that
+harness power you must be very careful. It can be misused. And frequently is,
+however, the usage I will demonstrate, is a good way to make use of this
+language primitive. Please read the official documentation on
+http://docs.scala-lang.org/tutorials/tour/implicit-parameters.html[Implicit Parameters]
+for more information on the language mechanism if you are not familiar first.
+
+Now that you are armed with implicit parameter knowledge, let's look at how we
+can use this power wisely to solve the following problem previously outlined:
+* Without modifying the type definitions how can we support naturally sortable
+  `Customer` values in, say, a list or collection structure.
+
+It's important we don't need to touch the type definitions for changes
+to behavior like this. It makes our structural model more able to mirror
+the real world it is attempting to represent. It also separates implementation
+details from the type definitions. Realistically they should be completely
+decoupled. If you ship a base class in a foundation library in version 1.x
+and forget to implement `Comparable<T>` adding this behavior in to version 2.x
+will break a lot of consumers of your library. Then you have to decide do you
+prioritize backward compatibility and workaround it in various ways (which
+you can do but it adds more noise to both your library and consumer code of
+your library) or do you break existing consumers of you library. Neither
+scenario is ideal.
+
+[source,scala]
+----------------------------------------------------------------
+/* For demonstration purposes we will be building out from scratch the `Ord`
+ * typeclass. This is actually not at all needed when building real systems
+ * and is discouraged. I will discuss how we would use the Scalaz version
+ * later on in this illustration. For now, we need to show how we can define
+ * typeclasses and extend existing types in our models without touching
+ * the original type's external definition though and serves that purpose.
+ */
+include::ordering.scala[]
+----------------------------------------------------------------
+
+See link:ordering.scala[] for the source if this doesn't render correctly.
+
+
+== Appendix
+
+include::appendix/REPL.asciidoc[Scala REPL]
+
+include::appendix/FUNCTIONS.asciidoc[Functions]
+
+include::appendix/COMPOSITION.asciidoc[Composition]
+
+include::appendix/PARAMETRIC_POLYMORPHISM.asciidoc[Parametric Polymorphism]
+
+include::appendix/PARTIAL_FUNCTIONS.asciidoc[Partial Functions]
+
+include::appendix/TRAITS.asciidoc[Traits]
+
+include::appendix/CASE_CLASSES.asciidoc[Case Classes (and Objects)]
+
+include::appendix/PATTERN_MATCHING.asciidoc[Pattern Matching]
+
+include::appendix/SINGLETON_OBJECTS.asciidoc[Singleton Objects]
+
+include::appendix/COMPANION_OBJECTS.asciidoc[Companion Objects]
+
+include::appendix/SEALED.asciidoc[Sealed]
+
+include::appendix/PACKAGE_OBJECTS.asciidoc[Package Objects]
+
+include::appendix/TYPE_ALIASES.asciidoc[Type Aliases]
+
+include::appendix/IMPLICIT_PARAMETERS.asciidoc[Implicit Parameters]
+
+include::appendix/USEFUL_TYPES_STDLIB.asciidoc[Useful Types (stdlib)]
+
+include::appendix/USEFUL_TYPES_SCALAZ.asciidoc[Useful Types (Scalaz)]
+
+include::appendix/TYPE_CONSTRUCTORS.asciidoc[Type Constructors]
+
+include::appendix/ALGEBRAIC_ABSTRACTIONS.asciidoc[Algebraic Abstractions]

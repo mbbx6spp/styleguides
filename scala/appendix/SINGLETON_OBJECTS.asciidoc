@@ -1,0 +1,40 @@
+=== Singleton Objects
+
+We have already seen examples of `object`s. These are typically used for
+namespacing functions as you cannot create an instance of this construct
+like you can with classes.
+
+See below for an example:
+
+[source,scala]
+----
+object Yolo {
+  def wtf[A](xs: List[A]): A = xs.head // <1>
+  def sqrt(x: Double): Double = Math.sqrt(x) // <2>
+}
+
+// We use the functions contained in Yolo like so:
+val d: Double = Yolo.sqrt(7.6)
+val h: String = Yolo.wtf(List.empty[String]) // thank me later :)
+----
+<1> This is dangerous to do...can you think why? If not Google :)
+<2> This is also dangerous and we'll see why later in the second part.
+
+We can also use singleton objects to extend from `App` object which
+will give us a way to run a program in Scala and provide the implicit
+`main` in the body of the object.
+
+For example
+
+[source,scala]
+----
+object YoloMain extends App {
+  val d: Double = Yolo.sqrt(7.6)
+  println("sqrt of 7.6 is: " + d)
+  val h: String = Yolo.wtf(List.empty[String]) // thank me later :)
+  println("what happened here?")
+}
+----
+
+We can run this with the following `YoloMain.main(Array.empty[String])`.
+

@@ -1,0 +1,238 @@
+== Quickstart
+
+Here we will be building a simple service configurator called Zed.
+
+I am currently working in the area of building tooling and services that
+help make JVM stack analytics infrastructure such as Kafka, Elasticsearch,
+and HBase more operational and manageable in production, at scale. So this
+Quickstart section will walk through building simple tools that we can use to
+help deploy and manage these services across nodes.
+
+You should be familiar with the following parts of Scala before delving in:
+
+* link:appendix/FUNCTIONS.asciidoc[Defining functions]
+* link:appendix/COMPOSITION.asciidoc[Function composition]
+* link:appendix/TYPE_ALIASES.asciidoc[Type Aliases]
+* link:appendix/ALGEBRAIC_ABSTRACTIONS.asciidoc[Algebraic Data Types]
+* link:appendix/PATTERN_MATCHING.asciidoc[Pattern Matching]
+* link:appendix/PACKAGE_OBJECTS.asciidoc[Package Objects]
+
+=== Host Inventory
+
+The first part of the problem we want to tackle is deploying services and
+configuration across clusters in different environments based on a declarative
+definition.
+
+While we might use a system level configuration management tool that
+specifies how to build our system images and package dependencies for
+specific hosts, we should also be able to run the _moving parts_ of
+the actual deployment separately from the host-level view using a cluster-
+aware view.
+
+For example, we might use Puppet to configure our basic system needs and
+package dependencies for an Elasticsearch node (e.g. we might be on version
+1.4 for one cluster and version 1.2 on an older
+cluster that hasn't been upgraded yet). So we can specify that a host has
+a particular role so that Puppet knows which version to ensure is installed
+on that node.
+
+The problem with Puppet or similar tools is that without a lot of
+customizations around PuppetDB, MCollective or a particular infrastructure
+asset management source of truth, Puppet agents do not know how to cooperate
+between nodes to do, for example, a rolling upgrade of Elasticsearch.
+
+We could use a deployment focused tool like Ansible or Salt or whatever to
+automate such a task reasonably well. But for this tutorial we care about
+building well defined types and APIs that conform to (informally) verifiable
+algebraic properties/laws, so we are building our own in Scala.
+
+We will start out with small and simple building blocks and use ideas like
+link:appendix/COMPOSITION.asciidoc[function composition] to build pipelines
+to transform raw inputs to refined and better typed results.
+
+==== Projecting Hostnames From Attributes
+
+One of the first things we might want to do is _project_ the derived
+hostnames, based on some kind of parameters, of instances in our
+infrastructure.
+
+Let's say we have defined a scheme for host naming conventions (ok, let's
+put aside whether this is a good idea and all the possible ways we could do
+it so we can get to writing some code for it):
+
+    ${service}-${env}-${role}-${num}.${dc}-${pod}.${domain}
+
+where:
+
+* `service` - refers to the internal server that runs processes there. Let's
+  let's pretend we have three services internally: `analytics`, `search`,
+  `messaging` and these are all used by two externally facing services/apps:
+  `api` and `webapp`. We cannot have any hyphens in this string or we break
+  the parsing coming back the other way.
+* `env` - refers to the environment that the internal server belongs in.
+* `role` - this provides more context for the server's role within the service.
+  For example, it might be an Elasticsearch data node, so that might be
+  `esdata`. This element should not contain any hyphens either (to simplify
+  requirements).
+* `num` - refers to the node number in the same `service`, `env`, and with
+  the same `role`. We will not be having that discussion of whether we zero
+  pad or not. We are not for the purposes of this tutorial. Deal with it. :)
+* `dc` - refers to the datacenter or region the node is provisioned in.
+* `pod` - refers to the pod within the datacenter. This might be numbers again.
+* `domain` - whatever domain you are using for your internal hosts.
+
+Valid hostname examples might be:
+
+[source,scala]
+----
+// define inside a package object of your naming
+val hostnames = Seq(
+  "analytics-test-kafkabroker-4.uswest1-2.exampleapp.com",
+  "search-prod-esdata-23.uswest2-1.exampleapp.com",
+  "messaging-staging-api-6.eucentral1-1.exampleapp.com",
+  "web-integ-proxy-3.euwest1-2.exampleapp.com",
+  "api-prod-cache-6.euwest1-1.exampleapp.com"
+)
+----
+
+So now we can define a function that takes the necessary parameters and
+gives us back the expected hostname. This could be the signature:
+
+[source,scala]
+----
+// define this inside of the same package object for now
+def toHostname(
+    service: Service
+  , env: Environment
+  , role: Role
+  , num: Int
+  , dc: Datacenter
+  , pod: Pod
+  , domain: String): String
+----
+
+The definition of the function would be pretty trivial with Scala's String
+interpolation:
+
+[source,scala]
+----
+  s"${service}-${env}-${role}-${num}.${dc}-${pod}.${domain}"
+----
+
+Now we can go from all those inputs to a hostname, but we could also
+parse a given hostname and assuming it conforms to the above scheme return
+all those parameters back too.
+
+[source,scala]
+----
+  // define this inside the same package object as above
+  type HostContext = (Service, Environment, Role, Int, Datacenter, Pod, String)
+  def fromHostname(h: String): HostContext =
+    sys.error("we will come back to this")
+----
+
+Now that isn't quite right. What happens if the given hostname string does not
+conform to the scheme above that we will use as the basis of the parser? So
+let's use `Option[_]` in this case:
+
+[source,scala]
+----
+  // keep the rest the same for now
+  def fromHostname(h: String): Option[HostContext] = ...
+----
+
+Now let's try to parse a hostname. It requires knowledge of Java/Scala String
+method `String#split(String, Int)`. Let's play around in the Scala REPL to
+understand how it works (copy and paste the `hostnames` value declaration code
+block into the REPL before the following code):
+
+[source,scala]
+----
+scala> hostnames(0).split("\\.", 3)
+res2: Array[String] = Array(analytics-test-kafkabroker-4, uswest1-2, exampleapp.com)
+----
+
+We can see the above splits a hostname that conforms to the described scheme
+into chunks that can be further split as needed. Still in the REPL let's try
+the following:
+
+[source,scala]
+----
+scala> res2(0)
+res3: String = analytics-test-kafkabroker-4
+
+scala> res3(0).split("\\-", 4)
+res4: Array[String] = Array(analytics, test, kafkabroker, 4)
+
+scala> res4(1).split("\\-", 2)
+res5: Array[String] = Array(uswest1, 2)
+----
+
+Let's play around in the REPL a little more:
+
+[source,scala]
+----
+scala> def f1(s: String): Option[(Array[String], Array[String], String)] = s.split("\\.", 3) match {
+     |   case Array(a1, a2, domain) => Some((a1.split("\\-", 4), a2.split("\\-", 2), domain))
+     |   case _ => None
+     | }
+f1: (s: String)Option[(Array[String], Array[String], String)]
+
+scala> f1(hostnames(0))
+res6: Option[(Array[String], Array[String], String)] = Some(([Ljava.lang.String;@260ff5b7,[Ljava.lang.String;@3724b43e,example
+app.com))
+
+scala> res6.get
+res7: (Array[String], Array[String], String) = (Array(analytics, test, kafkabroker, 4),Array(uswest1, 2),exampleapp.com)
+----
+
+Now let's write the function that takes us from where `f1` leaves us to where
+we would like to be:
+
+[source,scala]
+----
+scala> def f2(a1: Array[String], a2: Array[String], domain: String) = (a1, a2) match {
+     |   case (Array(s, e, r, n), Array(d, p), domain) => Option((Service(s), Environment(e), Role(r), Num(n), Datacenter(d), Pod(p), domain))
+     |   case _ => None
+     | }
+<console>:8: error: constructor cannot be instantiated to expected type;
+ found   : (T1, T2, T3)
+ required: (Array[String], Array[String])
+         case (Array(s, e, r, n), Array(d, p), domain) => Option((Service(s), Environment(e), Role(r), Num(n), Datacenter(d), Pod(p), domain))
+              ^
+<console>:8: error: not found: value Service
+         case (Array(s, e, r, n), Array(d, p), domain) => Option((Service(s), Environment(e), Role(r), Num(n), Datacenter(d), Pod(p), domain))
+                                                                  ^
+<console>:8: error: not found: value Environment
+         case (Array(s, e, r, n), Array(d, p), domain) => Option((Service(s), Environment(e), Role(r), Num(n), Datacenter(d), Pod(p), domain))
+                                                                              ^
+<console>:8: error: not found: value Role
+         case (Array(s, e, r, n), Array(d, p), domain) => Option((Service(s), Environment(e), Role(r), Num(n), Datacenter(d), Pod(p), domain))
+                                                                                              ^
+<console>:8: error: not found: value Num
+         case (Array(s, e, r, n), Array(d, p), domain) => Option((Service(s), Environment(e), Role(r), Num(n), Datacenter(d), Pod(p), domain))
+                                                                                                       ^
+<console>:8: error: not found: value Datacenter
+         case (Array(s, e, r, n), Array(d, p), domain) => Option((Service(s), Environment(e), Role(r), Num(n), Datacenter(d), Pod(p), domain))
+                                                                                                               ^
+<console>:8: error: not found: value Pod
+         case (Array(s, e, r, n), Array(d, p), domain) => Option((Service(s), Environment(e), Role(r), Num(n), Datacenter(d), Pod(p), domain))
+                                                                                                                              ^
+----
+
+Here we are told we need to define the types we want to use. This is
+expected since I didn't define any yet. So let's do that now.
+
+[source,scala]
+----
+include::zed.scala[]
+----
+
+See link:zed.scala[] for the source if it doesn't render above.
+
+
+
+TODO:
+
+* Specify the requirements of a simple environment introspection tool
+* Have small exercises for readers to extend

@@ -1,0 +1,53 @@
+=== Package Objects
+
+We have seen earlier that we can use objects to provide `apply` and `unapply`
+extractors in the form of a companion object for a trait or abstract class.
+(Is lying by omission really lying? These are the only two things you should
+be defining outside of case classes or case objects.)
+
+We have also seen that we can define case objects that are akin to flyweights
+(assuming you are familiar with that OO design pattern). If not, I just mean
+defining a value constructor that takes no arguments to differentiate it
+further. E.g. `EmptyList`, `ActivatedUserStatus`, ... there can and should
+be only one way to construct the value of these _things_.
+
+Another use of defining objects is for the purpose of packaging. The main
+reason these were created was because inside a package you can only define
+traits, classes, and objects at the top level. Sometimes you might want
+to define a convenience method or even a constant value. This is where
+package objects come in handy. Also type aliases can be defined inside a
+package object.
+
+Let's look at an example:
+
+[source,scala]
+----
+package my.awesomesauce
+
+val SHA = "ae6590bc"
+def doubler(x: Int): Int = 2*x
+
+// this will not compile
+----
+
+[source,scala]
+----
+package my
+
+package object awesomesauce {
+  val SHA = "ae6590bc"
+  def doubler(x: Int): Int = 2*x
+}
+
+object Main extends App {
+  println(awesomesauce.SHA)
+  println("Double of 3 is: " + awesomesauce.doubler(3))
+
+  // if we really wanted to we could do this:
+  //import awesomesauce._
+  //println(SHA)
+  //println("Double of 3 is: " + doubler(3))
+}
+
+----
+

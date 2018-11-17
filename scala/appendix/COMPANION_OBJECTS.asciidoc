@@ -1,0 +1,83 @@
+=== Companion Objects
+
+There is a special thing call companion objects which is basically just
+an `object` in Scala that is named after a trait or abstract class
+(technically any `class` but let's pretend I didn't say that since we
+shouldn't need to define any plain OO-style classes the majority of
+the time).
+
+You must define the companion object in the same file as the trait
+or abstract class.
+
+[source,scala]
+----
+abstract class WorkerType(hasBenefits: Boolean)
+// define case class or case object value constructors extending WorkerType here
+object WorkerType {
+  case object FullTimeEmployee extends WorkerType(true)
+  case class PartTimeEmployee(weeklyHours: Int) extends WorkerType(false)
+  case object Contractor extends WorkerType(false)
+
+  // body of companion object
+  // "class-level" methods on WorkerType here
+}
+----
+
+Companion objects have special methods `apply` and `unapply`, which assist
+with improving value construction and extracting values in pattern matching
+case clauses respectively.
+
+A companion object with an `unapply` method is also called an extractor
+object but that is just in case you come across the term. It's not very
+special besides that.
+
+Above we saw some examples of `apply` for the `DayOfWeek` type, which
+accepted an `Int` input and returned a case object value that represents
+the days of the week. See link:dayofweek.scala.
+
+.Some points to note are:
+* The `apply` method in `DayOfWeek` companion object returns a `Option[DayOfWeek]`.
+  This is necessary because we cannot represent all `Int` values as a `DayOfWeek`.
+  To express that it is good to return an `Option[A]` where `A` is your type.
+* We can refer to constants or enum `Int` values in Java types in the case clause
+  for primitive values, e.g. `Calendar.SUNDAY`. This helps us scan the code
+  and the compiler will report any typos at compile time so we have higher
+  assurance that the code we wrote is doing what we actually expect. Do you
+  know if the day of week `Int` constants representing the days of the week
+  in `Calendar` start from `1` or start from `0`? You don't need to, nor do you
+  need to worry about whether this changed between major versions of Java.
+
+Now let's look at an example of an `unapply` extractor method:
+
+[source,scala]
+----
+import java.util.Calendar
+
+object UpCased {
+  def unapply(s: String): Boolean = (s.toUpperCase == s)
+}
+
+object DownCased {
+  def unapply(s: String): Boolean = (s.toLowerCase == s)
+}
+
+object InternetMinor {
+  def unapply(i: Int): Boolean = (i < 13)
+}
+
+case class User(login: String, fullName: String, age: Int)
+
+// Using these extractors
+def reportUserCreationSuccess(u: User) =
+  user match {
+    case User(_, _, age @ InternetMinor()) =>
+      println("You are too young to create an account")
+    case u =>
+      println("Hooray! You can create an account")
+  }
+
+// reportUserCreationSuccess(User("mbbx6spp", "Susan Potter", 27)) // what is a white lie between friends?
+// reportUserCreationSuccess(User("elliphant", "Ellinor O", 29))
+// reportUserCreationSuccess(User("pandabear", "Panda", 11))
+----
+

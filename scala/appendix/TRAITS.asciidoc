@@ -1,0 +1,38 @@
+
+=== Traits
+
+Traits in Scala are very similar to Java's interfaces, although more flexible.
+
+In Java 8, Java now has the capability of defining default implementations
+for interface methods that can be overrided further down the hierarchy. This
+has been possible in Scala, well at least since 2.8 when I started using it in
+earnest.
+
+Here's an example:
+
+[source,scala]
+----
+trait Worker {
+  def interval: Int = 30
+  def init(c: Config): Unit
+  def finish(r: Reason): Unit
+  def run: Unit
+}
+----
+
+You can see here we defined a default implementation for `interval`.
+
+I use `trait`s and `abstract class`es in Scala to declare the names
+of my (interface) types. These are the only custom types that should
+ever appear in type signatures for functions as a general rule. This
+is where other Scala developers will disagree, but this is the point
+of having an opinionated guide to Scala. Right? :) Play in your REPL,
+build Scala programs, and read around the topic more. Through experience
+you will form your own opinion, but remember when you come back to this
+general rule that we can still be friends (just not BFFs) if you choose
+as different Scala path!
+
+I generally dislike using `traits` to define interfaces the way you
+would think about them in Java. We'll get back to that later in the
+'Parts To Avoid'.
+

@@ -1,0 +1,42 @@
+=== Functions
+
+Now let's just get started defining some functions in Scala:
+
+[source,scala]
+----
+include::functions.scala[]
+----
+
+Load link:functions.scala[] into your Scala REPL and play with it. To do this start
+a Scala REPL in your shell from this directory and then at the prompt type:
+
+[source,scala]
+----
+scala> :load functions.scala
+Loading functions.scala...
+defined object sgfunctions
+
+scala> import sgfunctions._
+import sgfunctions._
+
+scala> :t f1
+Int => Int
+----
+
+Now explore on your own. If you need pointers type `:help` at the `scala>`
+prompt and then experiment. It can only tell you no. It won't hurl abuse
+at you. Wait, till you meet the Scala compiler (`scalac`) and try doing
+typelevel stuff for that. ;)
+
+[NOTE]
+====
+.A few notes on terminology for those new to functional programming not just Scala:
+* Functions can and should just be thought of as another kind of value
+* You can pass around functions in Scala as arguments to other functions
+* Functions can also evaluate to a function value as it's result
+* A function that accepts a function as argument or returns a function
+  as a result is known as a higher order function (or HOF).
+* If a function accepts functions as arguments and also evaluates to a
+  function, then we call the special case of a HOF a _combinator_.
+====
+
